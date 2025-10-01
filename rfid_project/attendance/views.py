@@ -40,7 +40,7 @@ def process(request):
 
 def attend(user):
 	if user.name == None:
-		statu = 'profile to save krle bhai'
+		statu = 'profile saved'
 		return statu
 	logs = Log.objects.all()
 	for log in logs:
@@ -52,7 +52,7 @@ def attend(user):
 					statu = 'logout'
 					return statu
 				else:
-					statu = 'nikal ja bhai ab'
+					statu = 'time out already saved'
 					return statu
 	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, phone=user.phone, date=datetime.datetime.now(),
 				  time_in=datetime.datetime.now(), status='')
