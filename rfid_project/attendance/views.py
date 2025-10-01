@@ -45,7 +45,7 @@ def attend(user):
 	logs = Log.objects.all()
 	for log in logs:
 		if log.card_id == int(user.card_id):
-			if str(log.date) == str(datetime.datetime.now())[:10]:
+			# if str(log.date) == str(datetime.datetime.now())[:10]:
 				if log.time_out == None:
 					log.time_out = datetime.datetime.now()
 					log.save()
@@ -53,7 +53,7 @@ def attend(user):
 					return statu
 				else:
 					statu = 'time out already saved'
-					return statu
+					# return statu
 	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, phone=user.phone, date=datetime.datetime.now(),
 				  time_in=datetime.datetime.now(), status='')
 	new_log.save()
