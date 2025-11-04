@@ -54,8 +54,8 @@ def attend(user):
 				else:
 					statu = 'time out already saved'
 					# return statu
-	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, phone=user.phone, date=datetime.datetime.now(),
-				  time_in=datetime.datetime.now(), status='')
+	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, date=datetime.datetime.now(),
+			  time_in=datetime.datetime.now(), status='')
 	new_log.save()
 	statu = 'auth'
 	return statu

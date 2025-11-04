@@ -30,7 +30,7 @@
 $(document).ready(function(){
     setInterval(function(){
       $.ajax({
-        url: {% url 'index1' %}
+        url: "{% url 'index1' %}"
         }).done(function(data) {
         $('#cards').html(data);
       });

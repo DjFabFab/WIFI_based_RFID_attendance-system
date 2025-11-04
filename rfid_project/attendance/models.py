@@ -1,5 +1,5 @@
 from django.db import models
-import datetime
+from django.utils import timezone
 
 # Create your models here.
 class Student(models.Model):
@@ -21,14 +21,10 @@ class Log(models.Model):
     ida = models.IntegerField(default=0)
     card_id = models.IntegerField()
     name = models.CharField(max_length=50)
-	ida = models.IntegerField(default=0)
-	card_id = models.IntegerField()
-	name = models.CharField(max_length=50)
-	phone = models.IntegerField()
-	date = models.DateField(default=datetime.datetime.now())
-	time_in = models.TimeField(default=datetime.datetime.now())
-	time_out = models.TimeField(blank=True, null=True)
-	status = models.TextField(max_length=100)
+    date = models.DateField(default=timezone.now)
+    time_in = models.TimeField(default=timezone.now)
+    time_out = models.TimeField(blank=True, null=True)
+    status = models.TextField(max_length=100)
 
-	def __str__(self):
-		return str(self.name) + ' : ' + str(self.date)
+    def __str__(self):
+        return str(self.name) + ' : ' + str(self.date)

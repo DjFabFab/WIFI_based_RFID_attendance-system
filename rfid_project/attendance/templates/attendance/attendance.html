@@ -5,8 +5,8 @@
         <TD>{{ user.name}}</TD>
         <!-- <TD>{{ user.card_id}}</TD> -->
         <!-- <TD>{{ user.phone}}</TD> -->
-        <TD>{{ user.date}}</TD>
-        <TD>{{ user.time_in}}</TD>
+    <TD>{{ user.date|date:"d.m.Y" }}</TD>
+    <TD>{{ user.time_in|date:"H:i" }}</TD>
         <!-- <TD>{{ user.time_out}}</TD> -->
     </TR>
     {% endif %}
