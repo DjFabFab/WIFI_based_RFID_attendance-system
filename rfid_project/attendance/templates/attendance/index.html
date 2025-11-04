@@ -17,6 +17,7 @@
     <!-- <TH>Phone Number</TH> -->
     <TH>Datum</TH>
     <TH>Anwesend seit</TH>
+  <TH class="text-center" title="Löschen">Löschen</TH>
     <!-- <TH>Zeit Out</TH> -->
 </TR>
   </thead>
@@ -35,6 +36,25 @@ $(document).ready(function(){
         $('#cards').html(data);
       });
     },3000);
+  });
+  
+  function deleteEntry(cardId, btn){
+    $.ajax({
+      url: "{% url 'process' %}",
+      data: { card_id: cardId, delete: 1 },
+      method: 'GET'
+    }).done(function(resp){
+      // remove the table row containing the button
+      $(btn).closest('tr').remove();
+    }).fail(function(){
+      alert('Löschen fehlgeschlagen');
+    });
+  }
+
+  // delegated handler for delete buttons inside the dynamically loaded table
+  $(document).on('click', '.delete-btn', function(e){
+    var card = $(this).data('card');
+    deleteEntry(card, this);
   });
   </script>
 {% endblock %}

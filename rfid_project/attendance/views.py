@@ -28,7 +28,30 @@ def index(request):
 
 def process(request):
 	card = request.GET.get('card_id', 'kuch nahi mila')
+	# support deletion via ?card_id=...&delete=1
+	delete_flag = request.GET.get('delete', None)
 	users = Student.objects.all()
+	# if delete flag present, try to delete today's open Log for the card
+	if delete_flag is not None:
+		try:
+			cid = int(card)
+		except Exception:
+			return HttpResponse('invalid card id')
+		# find logs for this card without time_out and date == today
+		logs = Log.objects.filter(card_id=cid, time_out__isnull=True)
+		# further filter by today's date
+		import datetime
+		today_str = str(datetime.datetime.now())[:10]
+		logs_today = [l for l in logs if str(l.date) == today_str]
+		if logs_today:
+			# delete the most recent one
+			logs_today.sort(key=lambda x: x.time_in, reverse=True)
+			logs_today[0].delete()
+			return HttpResponse('deleted')
+		else:
+			return HttpResponse('no open entry')
+
+	# normal process: create or update attendance
 	for user in users:
 		if user.card_id == int(card):
 			ans = attend(user)
