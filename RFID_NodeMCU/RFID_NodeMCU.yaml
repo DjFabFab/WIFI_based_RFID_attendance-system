@@ -4,7 +4,7 @@
 substitutions:
   name: nfc-reader
   friendly_name: nfc-reader
-  http_endoint: "http://192.168.2.113:8080/process/?card_id="
+  http_endpoint: "http://192.168.2.82:8000/process/?card_id="
 
 globals:
   - id: source
@@ -52,6 +52,8 @@ switch:
 
 esp8266:
   board: d1_mini
+  framework:
+    version: 3.0.2
 
 # Enable logging
 logger:
@@ -121,12 +123,13 @@ pn532_i2c:
             blue: 100%
             flash_length: 500ms
     - lambda: |-
-        ESP_LOGI("ndef", "Fount Tag: %s", x.c_str());
+        ESP_LOGI("ndef", "Found Tag: %s", x.c_str());
     - http_request.get:
+        capture_response: true
         # return endpoint + uid (and sanitize uid in c++)
         url: !lambda |-
           x.erase(std::remove(x.begin(), x.end(), '-'), x.end());
-          return ((std::string) "${http_endoint}" + x);
+          return ((std::string) "${http_endpoint}" + x);
         on_response:
           then:
             - logger.log:
@@ -136,40 +139,94 @@ pn532_i2c:
                   - response->status_code
                   - response->duration_ms
             - if:
+                # Check for "auth"/login response
                 condition:
-                  switch.is_on: led_enabled
+                  lambda: 'return body == "auth";'
                 then:
-                - light.turn_on:
-                    id: activity_led
-                    brightness: 100%
-                    red: 0%
-                    green: 100%
-                    blue: 0%
-                    flash_length: 1000ms
+                  - rtttl.play: "two_short:d=4,o=5,b=100:16e6,16e6"
+                  - light.turn_on:
+                      id: activity_led
+                      brightness: 100%
+                      red: 0%
+                      green: 100%
+                      blue: 0%
+                      flash_length: 1000ms
+            - if:
+                # Check for "logout" response
+                condition:
+                    lambda: 'return body == "logout";'
+                then:
+                  - rtttl.play: "long:d=1,o=5,b=100:e6"
+                  - light.turn_on:
+                      id: activity_led
+                      brightness: 100%
+                      red: 0%
+                      green: 100%
+                      blue: 0%
+                      flash_length: 1000ms
+            - if:
+                # Check for "registered" response
+                condition:
+                  lambda: 'return body == "registered successfully";'
+                then:
+                  - rtttl.play: "success:d=16,o=5,b=100:c6e6g6c7"
+                  - light.turn_on:
+                      id: activity_led
+                      brightness: 100%
+                      red: 0%
+                      green: 0%
+                      blue: 100%
+                      flash_length: 1000ms
+            - if:
+                # Check for "profile saved" response
+                condition:
+                  lambda: 'return body == "profile saved";'
+                then:
+                  - light.turn_on:
+                      id: activity_led
+                      brightness: 100%
+                      red: 0%
+                      green: 0%
+                      blue: 100%
+                      flash_length: 1000ms
+            - if:
+                all:
+                  - lambda: |-
+                      return (body != "auth" &&
+                              body != "logout" &&
+                              body != "registered successfully" &&
+                              body != "profile saved");
+                then:
+                  - logger.log:
+                      format: "Error: Response status: %d, message %s"
+                      level: WARN
+                      args:
+                        - response->status_code
+                        - body.c_str()
+                  - rtttl.play: "warning:d=16,o=5,b=100:c6p"
+                  - light.turn_on:
+                      id: activity_led
+                      brightness: 100%
+                      red: 100%
+                      green: 0%
+                      blue: 0%
+                      flash_length: 1000ms
         on_error:
           then:
             - logger.log:
                 format: "Request failed!"
                 level: WARN
-            - if:
-                condition:
-                  switch.is_on: led_enabled
-                then:
-                - light.turn_on:
-                    id: activity_led
-                    brightness: 100%
-                    red: 100%
-                    green: 0%
-                    blue: 0%
-                    flash_length: 1000ms
-    
-    - if:
-        condition:
-          switch.is_on: buzzer_enabled
-        then:
-        - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
-  on_tag_removed:
-    then:
+            - rtttl.play: "error:d=16,o=5,b=100:c6p"
+            - light.turn_on:
+                id: activity_led
+                brightness: 100%
+                red: 100%
+                green: 0%
+                blue: 0%
+                flash_length: 1000ms
+
+  # on_tag_removed:
+    # then:
     # - homeassistant.event:
     #     event: esphome.tag_removed
 
@@ -179,10 +236,10 @@ output:
   pin: D7
   id: buzzer
 
-binary_sensor:
-  - platform: status
-    name: "${friendly_name} Status"
-    entity_category: diagnostic
+# binary_sensor:
+#   - platform: status
+#     name: "${friendly_name} Status"
+#     entity_category: diagnostic
 
 # Define buzzer as output for RTTTL
 rtttl:
