@@ -13,7 +13,7 @@
     <TH>ID.No</TH>
     <TH>Card ID</TH>
     <TH>Name</TH>
-    <TH>Phone Number</TH>
+  <!-- Phone Number column removed -->
     <TH>DOB</TH>
     <TH>Gender</TH>
 </TR>
@@ -27,7 +27,7 @@
 $(document).ready(function(){
     setInterval(function(){
       $.ajax({
-        url: {% url 'details1' %}
+        url: "{% url 'details1' %}"
         }).done(function(data) {
         $('#userdetails').html(data);
       });

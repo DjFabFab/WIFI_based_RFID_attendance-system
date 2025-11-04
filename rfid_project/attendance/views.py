@@ -112,7 +112,7 @@ def card(request):
 			ids = request.POST.get('idsearch')
 			if Student.objects.filter(id=int(ids)).exists():
 				Student.objects.filter(id=int(ids)).update(
-					name=None, dob=None, phone=None, sex=None, email=None, address=None)
+					name=None, dob=None, sex=None, email=None, address=None)
 				stat = 'Deleted Successfully'
 			else:
 				stat = 'Card not found'
@@ -130,24 +130,22 @@ def edit(request):
 	else:
 		name = request.POST.get('name')
 		dob = request.POST.get('date')
-		phone = request.POST.get('phone')
 		email = request.POST.get('email')
 		gender = request.POST.get('gender')
 		address = request.POST.get('address')
-		new = [name, phone, dob, email, gender, address]
+		new = [name, dob, email, gender, address]
 		for user in users:
 			if user.card_id == selected.card_id:
-				old = [user.name, user.phone, user.dob, user.email, user.sex, user.address]
+				old = [user.name, user.dob, user.email, user.sex, user.address]
 				for item in new:
 					if item == '' or item is None:
 						new[i] = old[i]
 					i = i + 1
 				user.name = new[0]
-				user.phone = new[1]
-				user.dob = new[2]
-				user.email = new[3]
-				user.sex = new[4]
-				user.address = new[5]
+				user.dob = new[1]
+				user.email = new[2]
+				user.sex = new[3]
+				user.address = new[4]
 				user.save()
 				stat = 'Profile Updated'
 		selected = None
