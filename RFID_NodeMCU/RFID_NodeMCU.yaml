@@ -129,7 +129,8 @@ pn532_i2c:
         # return endpoint + uid (and sanitize uid in c++)
         url: !lambda |-
           x.erase(std::remove(x.begin(), x.end(), '-'), x.end());
-          return ((std::string) "${http_endpoint}" + x);
+          int decimal_value = std::stoi(x, nullptr, 16);
+          return ((std::string) "${http_endpoint}" + decimal_value);
         on_response:
           then:
             - logger.log:
