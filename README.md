@@ -6,17 +6,23 @@
 
 -> It also do not requires the wifi credentials to be hard coded inside it. I have used Arduino's Wifi manager library for this. It automatically creates a hotspot when it doesn't find previous or saved wifi. You can simply connect with its hotspot using a device and can give required wifi credentials and it will connect to that easily.
 
+# Presency
+
+Presency ist ein leichtgewichtiges Anwesenheits‑System, das RFID‑Karten (RC522) mit einem NodeMCU/ESP-Gerät liest und Anwesenheitsdaten per WLAN an einen Django‑Server sendet.
+
+Kurz: NodeMCU + RC522 → HTTP GET /process/?card_id=... → Django speichert Anwesenheiten in SQLite.
+
 # Technology Stack
 SOFTWARE:
 1) Django Framework
 2) Bootstrap
 3) Javascript-AJAX
-4) HTML and CSS
+4) HTML und CSS
 
 HARDWARE:
 1) NodeMCU
 2) RC-522 RFID Reader
-3) LEDs and Buzzer
+3) LEDs und Buzzer
 
 # SCREENSHOTS
 1) Password Authentication :
