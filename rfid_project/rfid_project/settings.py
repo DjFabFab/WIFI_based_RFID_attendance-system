@@ -27,6 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+# Human-friendly project name used in templates and docs
+PROJECT_NAME = 'Presency'
+
 
 # Application definition
 
