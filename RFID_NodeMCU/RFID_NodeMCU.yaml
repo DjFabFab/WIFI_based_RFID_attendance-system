@@ -38,9 +38,9 @@ logger:
   level: INFO
 
 # Enable Home Assistant API
-# api:
-#   encryption:
-#     key: "S0dEytZIewf/X5JOUOg2SSaldF2V0jyztJGFwv7pzF8="
+api:
+  encryption:
+    key: ""
 #   services:
 #   - service: rfidreader_tag_ok
 #     then:
@@ -63,7 +63,7 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  min_auth_mode: WPA2
+  min_auth_mode: WPA #WPA2
 
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
@@ -105,8 +105,8 @@ pn532_i2c:
         # return endpoint + uid (and sanitize uid in c++)
         url: !lambda |-
           x.erase(std::remove(x.begin(), x.end(), '-'), x.end());
-          x = std::stoi(x, nullptr, 16);
-          return ((std::string) "${http_endpoint}" + x);
+          int decimal_value = std::stoi(x, nullptr, 16);
+          return ((std::string) "${http_endpoint}") + std::to_string(decimal_value);
         on_response:
           then:
             - logger.log:
