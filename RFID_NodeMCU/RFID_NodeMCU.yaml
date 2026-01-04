@@ -40,7 +40,7 @@ logger:
 # Enable Home Assistant API
 api:
   encryption:
-    key: ""
+    key: !secret api_encryption_key
 #   services:
 #   - service: rfidreader_tag_ok
 #     then:
@@ -104,9 +104,12 @@ pn532_i2c:
         capture_response: true
         # return endpoint + uid (and sanitize uid in c++)
         url: !lambda |-
+          // Strip the dashes that the PN532 library adds to the UID string
           x.erase(std::remove(x.begin(), x.end(), '-'), x.end());
-          int decimal_value = std::stoi(x, nullptr, 16);
-          return ((std::string) "${http_endpoint}") + std::to_string(decimal_value);
+          // Convert the remaining hex string to a (long) decimal number
+          long decimal_value = std::stol(x, nullptr, 16);
+          // Build the final URL
+          return std::string("${http_endpoint}") + std::to_string(decimal_value);
         on_response:
           then:
             - logger.log:
