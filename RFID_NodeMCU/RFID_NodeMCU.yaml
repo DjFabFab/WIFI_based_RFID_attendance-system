@@ -105,9 +105,16 @@ pn532_i2c:
         # return endpoint + uid (and sanitize uid in c++)
         url: !lambda |-
           // Strip the dashes that the PN532 library adds to the UID string
-          x.erase(std::remove(x.begin(), x.end(), '-'), x.end());
-          // Convert the remaining hex string to a (long) decimal number
-          long decimal_value = std::stol(x, nullptr, 16);
+          std::string clean_uid = x;
+          clean_uid.erase(std::remove(clean_uid.begin(), clean_uid.end(), '-'), clean_uid.end());
+          // Ensure UID fits within 64-bit (max 16 hex digits). 7-byte UID = 14 hex digits.
+          if (clean_uid.size() > 16) {
+            ESP_LOGW("uid", "UID too long (%zu chars), truncating: %s", clean_uid.size(), clean_uid.c_str());
+            // Truncate to last 16 characters to avoid overflow
+            clean_uid = clean_uid.substr(clean_uid.size() - 16);
+          }
+          // Convert the cleaned UID string to a 64-bit integer
+          unsigned long long decimal_value = std::stoull(clean_uid, nullptr, 16);
           // Build the final URL
           return std::string("${http_endpoint}") + std::to_string(decimal_value);
         on_response:
