@@ -1,10 +1,3 @@
-"""
-rfid_serial_bridge.py
-
-A one-way TX-only bridge that reads raw UIDs from a serial port and forwards
-them to a Django HTTP endpoint.
-"""
-
 import argparse
 import logging
 import re
@@ -47,9 +40,13 @@ def main():
                     if not line:
                         continue
                     
-                    if not re.fullmatch(r'[0-9A-Fa-f]+', line):
+                    if not re.fullmatch(r'[0-9A-Fa-f-]+', line):
                         logger.info(f"Skipping non-hex noise: {line}")
                         continue
+                    # The ESP8266 streams dashed UIDs (e.g. "12-34-56-78"); strip dashes
+                    # before forwarding so the URL carries clean hex. Django's
+                    # preprocess_uid also tolerates dashes, but clean hex is safer.
+                    line = line.replace('-', '')
                     
                     # Forward to API
                     http_attempt = 0
