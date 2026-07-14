@@ -1,14 +1,7 @@
-# ESPHome configuration for NFC Reader with PN532 and NodeMCU
-#
-
 substitutions:
   name: nfc-reader
   friendly_name: nfc-reader
   http_endpoint: "http://10.42.0.1:8000/process/?card_id="
-
-globals:
-  - id: url
-    type: std::string
 
 esphome:
   name: ${name}
@@ -16,9 +9,6 @@ esphome:
   on_boot:
     priority: -10
     then:
-    - wait_until:
-        wifi.connected:
-    # - logger.log: API is connected!
     - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
     - light.turn_on:
         id: activity_led
@@ -30,204 +20,41 @@ esphome:
 
 esp8266:
   board: d1_mini
-  # framework:
-  #   version: 3.0.2
+
+uart:
+  id: uart_bus
+  baud_rate: 115200
+  tx_pin: GPIO1
 
 # Enable logging
 logger:
-  level: INFO
-
-# Enable Home Assistant API
-api:
-  encryption:
-    key: !secret api_encryption_key
-#   services:
-#   - service: rfidreader_tag_ok
-#     then:
-#     - rtttl.play: "beep:d=16,o=5,b=100:b"
-
-#   - service: rfidreader_tag_ko
-#     then:
-#     - rtttl.play: "beep:d=8,o=5,b=100:b"
-
-#   - service: play_rtttl
-#     variables:
-#       song_str: string
-#     then:
-#     - rtttl.play: !lambda 'return song_str;'
-
-ota:
-  - platform: esphome
-    password: !secret ota_password
-
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  min_auth_mode: WPA #WPA2
-
-
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: "Nfc-Reader Fallback Hotspot"
-    password: "Z144k7fG9esa"
-
-captive_portal:
-
-# button:
-#   - platform: restart
-#     name: "${friendly_name} Restart"
-#     entity_category: config
+  baud_rate: 0
 
 i2c:
   scan: False
   frequency: 400kHz
-
-http_request:
-  esp8266_disable_ssl_support: True
-  timeout: 
-    seconds: 10
 
 pn532_i2c:
   id: pn532_board
   on_tag:
     then:
     - light.turn_on:
-            id: activity_led
-            brightness: 100%
-            red: 0%
-            green: 0%
-            blue: 100%
-            flash_length: 500ms
+        id: activity_led
+        brightness: 100%
+        red: 0%
+        green: 100%
+        blue: 0%
+        flash_length: 500ms
+    - rtttl.play: "chirp:d=10,o=5,b=100:c"
     - lambda: |-
-        ESP_LOGI("ndef", "Found Tag: %s", x.c_str());
-    - http_request.get:
-        capture_response: true
-        # return endpoint + uid (and sanitize uid in c++)
-        url: !lambda |-
-          // Strip the dashes that the PN532 library adds to the UID string
-          std::string clean_uid = x;
-          clean_uid.erase(std::remove(clean_uid.begin(), clean_uid.end(), '-'), clean_uid.end());
-          // Ensure UID fits within 64-bit (max 16 hex digits). 7-byte UID = 14 hex digits.
-          if (clean_uid.size() > 16) {
-            ESP_LOGW("uid", "UID too long (%zu chars), truncating: %s", clean_uid.size(), clean_uid.c_str());
-            // Truncate to last 16 characters to avoid overflow
-            clean_uid = clean_uid.substr(clean_uid.size() - 16);
-          }
-          // Convert the cleaned UID string to a 64-bit integer
-          unsigned long long decimal_value = std::stoull(clean_uid, nullptr, 16);
-          // Build the final URL
-          return std::string("${http_endpoint}") + std::to_string(decimal_value);
-        on_response:
-          then:
-            - logger.log:
-                level: INFO
-                format: 'Response status: %d, Duration: %u ms'
-                args:
-                  - response->status_code
-                  - response->duration_ms
-            - if:
-                # Check for "auth"/login response
-                condition:
-                  lambda: 'return body == "auth";'
-                then:
-                  # o=6 for higher pitch d=4 for shorter note b=100 for tempo
-                  - rtttl.play: "two_short:d=4,o=6,b=100:16e6,16e6"
-                  - light.turn_on:
-                      id: activity_led
-                      brightness: 100%
-                      red: 0%
-                      green: 100%
-                      blue: 0%
-                      flash_length: 1000ms
-            - if:
-                # Check for "logout" response
-                condition:
-                    lambda: 'return body == "logout";'
-                then:
-                  - rtttl.play: "long:d=3,o=4,b=100:6e6"
-                  - light.turn_on:
-                      id: activity_led
-                      brightness: 100%
-                      red: 0%
-                      green: 100%
-                      blue: 0%
-                      flash_length: 1000ms
-            - if:
-                # Check for "registered" response
-                condition:
-                  lambda: 'return body == "registered successfully";'
-                then:
-                  - rtttl.play: "success:d=16,o=5,b=100:c6e6g6c7"
-                  - light.turn_on:
-                      id: activity_led
-                      brightness: 100%
-                      red: 0%
-                      green: 0%
-                      blue: 100%
-                      flash_length: 1000ms
-            - if:
-                # Check for "profile saved" response
-                condition:
-                  lambda: 'return body == "profile saved";'
-                then:
-                  - light.turn_on:
-                      id: activity_led
-                      brightness: 100%
-                      red: 0%
-                      green: 0%
-                      blue: 100%
-                      flash_length: 1000ms
-            - if:
-                all:
-                  - lambda: |-
-                      return (body != "auth" &&
-                              body != "logout" &&
-                              body != "registered successfully" &&
-                              body != "profile saved");
-                then:
-                  - logger.log:
-                      format: "Error: Response status: %d, message %s"
-                      level: WARN
-                      args:
-                        - response->status_code
-                        - body.c_str()
-                  - rtttl.play: "warning:d=12,o=5,b=100:c6p"
-                  - light.turn_on:
-                      id: activity_led
-                      brightness: 100%
-                      red: 100%
-                      green: 0%
-                      blue: 0%
-                      flash_length: 1000ms
-        on_error:
-          then:
-            - logger.log:
-                format: "Request failed!"
-                level: WARN
-            - rtttl.play: "error:d=16,o=5,b=100:c6p"
-            - light.turn_on:
-                id: activity_led
-                brightness: 100%
-                red: 100%
-                green: 0%
-                blue: 0%
-                flash_length: 1000ms
-
-  # on_tag_removed:
-    # then:
-    # - homeassistant.event:
-    #     event: esphome.tag_removed
+        id(uart_bus).write_str(x.c_str());
+        id(uart_bus).write_str("\n");
 
 # Define the buzzer output
 output:
 - platform: esp8266_pwm
   pin: D7
   id: buzzer
-
-# binary_sensor:
-#   - platform: status
-#     name: "${friendly_name} Status"
-#     entity_category: diagnostic
 
 # Define buzzer as output for RTTTL
 rtttl:
