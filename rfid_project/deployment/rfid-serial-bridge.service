@@ -1,0 +1,15 @@
+[Unit]
+Description=RFID Serial Bridge (ESP8266 -> Django)
+After=rfid-server.service
+Wants=rfid-server.service
+Requires=rfid-server.service
+
+[Service]
+Type=simple
+User=pi
+Restart=always
+RestartSec=5
+ExecStart=/home/pi/WIFI_based_RFID_attendance-system/rfid_project/bin/python3 /home/pi/WIFI_based_RFID_attendance-system/rfid_project/rfid_serial_bridge.py --port /dev/ttyRFID
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+# Create a stable /dev/ttyRFID symlink for the ESP8266 USB-serial adapter.
+# Find your adapter's ids with: lsusb
+#   CH340/CH341 : 1a86:7523
+#   CP2102/CP210x: 10c4:ea60
+# Replace the idVendor/idProduct below with your device's values if needed.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="ttyRFID"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", SYMLINK+="ttyRFID"
