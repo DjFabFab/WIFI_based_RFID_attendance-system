@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Student, Log
+from .uid_utils import preprocess_uid
 from django.shortcuts import redirect
 import datetime
 
@@ -27,7 +28,14 @@ def index(request):
 
 
 def process(request):
-	card = request.GET.get('card_id', 'kuch nahi mila')
+	uid = request.GET.get("uid", None)
+	if uid is not None:
+		try:
+			card = preprocess_uid(uid)
+		except ValueError:
+			return HttpResponse("invalid uid", status=400)
+	else:
+		card = request.GET.get("card_id", "kuch nahi mila")
 	# support deletion via ?card_id=...&delete=1
 	delete_flag = request.GET.get('delete', None)
 	users = Student.objects.all()
