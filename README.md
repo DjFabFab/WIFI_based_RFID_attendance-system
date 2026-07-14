@@ -48,3 +48,20 @@ HARDWARE:
 6) Final Hardware with PCB
 
 ![WhatsApp Image 2019-08-11 at 9 41 41 PM (3)](https://user-images.githubusercontent.com/37211676/65944862-4228d680-e450-11e9-849c-fb3f0b062e3f.jpeg)
+## Serial Bridge (ESP8266 → Raspberry Pi)
+
+To set up the serial bridge service:
+
+1. Copy the service file:
+   `sudo cp rfid_project/deployment/rfid-serial-bridge.service /etc/systemd/system/`
+2. Enable and start the service:
+   `sudo systemctl daemon-reload && sudo systemctl enable --now rfid-serial-bridge.service`
+
+To set up the udev symlink:
+
+1. Copy the udev rules:
+   `sudo cp rfid_project/deployment/99-rfid.rules /etc/udev/rules.d/`
+2. Reload rules and trigger:
+   `sudo udevadm control --reload-rules && sudo udevadm trigger`
+
+The service depends on `rfid-server.service` and will automatically restart on failure.
