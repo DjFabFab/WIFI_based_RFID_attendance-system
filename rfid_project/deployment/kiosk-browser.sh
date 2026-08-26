@@ -7,19 +7,6 @@
 # Log into https://www.divera247.com/ once in the kiosk profile
 # (~/.config/presency-kiosk) so the dashboard shows member statuses.
 #
-# Wayland OSK (squeekboard): Chromium must run native Wayland for the
-# zwp_text_input_v3 protocol to trigger squeekboard on input focus.
-# --ozone-platform=wayland is required; squeekboard must be running
-# (started via labwc autostart, see install-rpi.sh). If the OSK still
-# doesn't appear, check: `ps aux | grep squeekboard` and
-# `WAYLAND_DISPLAY=wayland-0 squeekboard` is not blocked by kiosk layer.
-
-# Ensure squeekboard is running (started early via autostart, but be defensive)
-if ! pgrep -x squeekboard >/dev/null 2>&1; then
-  nohup /usr/bin/squeekboard >/dev/null 2>&1 &
-  sleep 0.5
-fi
-
 # Wait for Django to be ready before launching Chromium — otherwise the
 # kiosk shows a blank <body> until a manual F5 (server takes ~5s to start
 # after reboot, while labwc/Chromium starts immediately via autostart).

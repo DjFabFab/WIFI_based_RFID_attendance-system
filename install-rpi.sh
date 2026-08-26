@@ -66,14 +66,10 @@ sudo systemctl enable --now rfid-serial-bridge.service
 
 labwc
 
-# Wayland on-screen keyboard (squeekboard) — must run for Chromium
-# text-input to trigger OSK on input focus. labwc autostart should contain:
-#   squeekboard &
+# labwc autostart should contain:
 #   exec /usr/local/bin/kiosk-browser.sh &
-# squeekboard is a layer-shell overlay, so it appears above the kiosk
-# window. If OSK doesn't appear, check `ps aux | grep squeekboard` and
-# that Chromium runs with --ozone-platform=wayland (see kiosk-browser.sh).
-
+# On-screen keyboard is now in-page (virtual-keyboard.js/css) — no OS
+# dependency, see rfid_project/attendance/static/attendance/virtual-keyboard.*
 # WAYLAND_DISPLAY=/run/user/1000/wayland-0 wlr-randr
 # WAYLAND_DISPLAY=/run/user/1000/wayland-0 wlr-randr --output DSI-1 --transform 180
 # WAYLAND_DISPLAY=/run/user/1000/wayland-0 wlopm --off DSI-1

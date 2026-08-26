@@ -11,6 +11,7 @@
 
 	<!-- Kiosk theme: dark, high-contrast, touch-friendly (overrides Bootstrap) -->
 	<link rel="stylesheet" href="{% static 'attendance/kiosk.css' %}">
+	<link rel="stylesheet" href="{% static 'attendance/virtual-keyboard.css' %}">
 	{% block extra_head %}{% endblock %}
 
 	<title>{% block title %}{% endblock %}</title>
@@ -61,6 +62,7 @@
 <script src="{% static 'attendance/vendor/popper.min.js' %}"></script>
 <script src="{% static 'attendance/vendor/bootstrap.min.js' %}"></script>
 <script src="{% static 'attendance/kiosk.js' %}"></script>
+<script src="{% static 'attendance/virtual-keyboard.js' %}"></script>
 <script>$('.toast').toast('show')</script>
 {% block js %}{% endblock %}
 </body>

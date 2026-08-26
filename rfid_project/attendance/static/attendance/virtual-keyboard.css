@@ -1,0 +1,81 @@
+/* Presency in-page virtual keyboard — touch-friendly, dark kiosk theme */
+.vk-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1300;
+  background: var(--kiosk-surface-2, #20262f);
+  border-top: 2px solid var(--kiosk-border, #2b3340);
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.22s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.vk-container.vk-visible {
+  transform: translateY(0);
+}
+.vk-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.vk-row:last-child {
+  margin-bottom: 0;
+}
+.vk-key {
+  flex: 1;
+  min-width: 0;
+  max-width: 72px;
+  min-height: 48px;
+  padding: 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--kiosk-text, #eef2f8);
+  background: var(--kiosk-surface, #181d26);
+  border: 1px solid var(--kiosk-border, #2b3340);
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.vk-key:active {
+  background: var(--kiosk-accent, #4d8dff);
+  color: #04210f;
+  transform: scale(0.97);
+}
+.vk-key-wide {
+  max-width: 96px;
+  flex: 1.4;
+}
+.vk-key-extra-wide {
+  max-width: 140px;
+  flex: 2;
+}
+.vk-key-space {
+  max-width: 320px;
+  flex: 3;
+}
+.vk-key-active {
+  background: var(--kiosk-warning, #ffc14d) !important;
+  color: #241a05 !important;
+}
+.vk-key svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  margin: 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (max-width: 860px) {
+  .vk-key {
+    font-size: 1rem;
+    min-height: 44px;
+  }
+}
