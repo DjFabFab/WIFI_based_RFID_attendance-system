@@ -21,3 +21,5 @@ db.sqlite3.bak
 
 # Real Divera247 access key -- never commit this file
 deployment/divera_kiosk.env
+# Local PI connection notes -- never commit (contains internal IPs)
+deployment/PI_ACCESS.md
