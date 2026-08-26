@@ -31,6 +31,7 @@ html,body{height:100vh;overflow:hidden}
 .alarm-person.dot-danger{border-left-color:#dc3545}
 .alarm-person.dot-dark{border-left-color:#8b0000}
 .alarm-person.dot-secondary{border-left-color:#6c757d}
+.alarm-person-since{font-size:.65rem;opacity:.6;margin-left:.25rem}
 .alarm-idle-tile{border:2px solid #6c757d;background:rgba(108,117,125,.08);text-align:center;justify-content:center;align-items:center}
 .alarm-idle-tile .alarm-tile-value{font-size:1.8rem;color:#6c757d}
 .alarm-idle-tile .alarm-tile-label{font-size:.85rem}
@@ -108,16 +109,16 @@ html,body{height:100vh;overflow:hidden}
 
     {% if crew_list %}
     <div class="alarm-tile alarm-tile-blue" style="padding:.5rem .75rem">
-      <div class="alarm-tile-label">Eingeschriebene Einsatzkräfte</div>
+      <div class="alarm-tile-label">Statusübersicht</div>
       <div class="alarm-people">
         {% for p in crew_list %}
-        <div class="alarm-person dot-{{ p.color }}">{{ p.name }}</div>
+        <div class="alarm-person dot-{{ p.color }}">{{ p.name }}{% if p.since %} <span class="alarm-person-since">{{ p.since }}</span>{% endif %}</div>
         {% endfor %}
       </div>
     </div>
     {% else %}
     <div class="alarm-tile alarm-tile-blue" style="padding:.5rem .75rem;text-align:center;justify-content:center;align-items:center">
-      <div class="alarm-tile-label">Eingeschriebene Einsatzkräfte</div>
+      <div class="alarm-tile-label">Statusübersicht</div>
       <div style="color:#6c757d;font-size:.9rem">Keine Einsatzkräfte</div>
     </div>
     {% endif %}

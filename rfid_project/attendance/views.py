@@ -8,6 +8,7 @@ import datetime
 import json
 import os
 import pathlib
+import time
 import requests
 
 
@@ -369,6 +370,7 @@ def get_alarm_display(payload: dict) -> dict:
                     consumer_map = consumer
 
             _user_status = {}
+            _user_status_ts = {}
             monitor = data.get("monitor")
             if isinstance(monitor, dict):
                 monitor_users = monitor.get("3")
@@ -378,6 +380,25 @@ def get_alarm_display(payload: dict) -> dict:
                             st = udata.get("status")
                             if st is not None:
                                 _user_status[str(uid)] = str(st)
+                            ts = udata.get("ts")
+                            if ts:
+                                _user_status_ts[str(uid)] = int(ts)
+
+            def _relative_time(ts_val):
+                now_ts = int(time.time())
+                diff = now_ts - int(ts_val)
+                if diff < 60:
+                    return f"{diff}s"
+                elif diff < 3600:
+                    return f"{diff // 60}min"
+                elif diff < 86400:
+                    h = diff // 3600
+                    m = (diff % 3600) // 60
+                    return f"{h}h {m}min" if m else f"{h}h"
+                else:
+                    d = diff // 86400
+                    h = (diff % 86400) // 3600
+                    return f"{d}d {h}h" if h else f"{d}d"
 
             for uid, uinfo in consumer_map.items():
                 if not isinstance(uinfo, dict):
@@ -394,7 +415,8 @@ def get_alarm_display(payload: dict) -> dict:
                     name = " ".join(parts) if parts else uid_str
                 user_sid = _user_status.get(uid_str, "")
                 color = _color_map_for_names.get(user_sid, "secondary")
-                crew_list.append({"name": name, "color": color})
+                ts = _user_status_ts.get(uid_str)
+                crew_list.append({"name": name, "color": color, "since": _relative_time(ts) if ts else ""})
 
             if active and responded_user_ids:
                 for uid in responded_user_ids:
@@ -529,7 +551,7 @@ def get_alarm_display(payload: dict) -> dict:
                         if isinstance(ucr_info, dict):
                             mapped_sid = ucr_info.get("status_id")
                             ucr_name = ucr_info.get("name") or ""
-                            if mapped_sid is not None and ucr_name:
+                            if mapped_sid is not None and ucr_name and str(mapped_sid) not in status_name_map:
                                 status_name_map[str(mapped_sid)] = ucr_name
                 resolved = status_name_map.get(str(sid))
                 if resolved:
