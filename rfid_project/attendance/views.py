@@ -390,15 +390,11 @@ def get_alarm_display(payload: dict) -> dict:
                 if diff < 60:
                     return f"{diff}s"
                 elif diff < 3600:
-                    return f"{diff // 60}min"
+                    return f"{round(diff / 60)}min"
                 elif diff < 86400:
-                    h = diff // 3600
-                    m = (diff % 3600) // 60
-                    return f"{h}h {m}min" if m else f"{h}h"
+                    return f"{round(diff / 3600)}h"
                 else:
-                    d = diff // 86400
-                    h = (diff % 86400) // 3600
-                    return f"{d}d {h}h" if h else f"{d}d"
+                    return f"{round(diff / 86400)}d"
 
             for uid, uinfo in consumer_map.items():
                 if not isinstance(uinfo, dict):
@@ -537,7 +533,7 @@ def get_alarm_display(payload: dict) -> dict:
                     "innerhalb 10 Minuten": "≤10min",
                     "über 10 Minuten": ">10min",
                     "Nicht einsatzbereit": "N.einsatzb.",
-                    "Gerätehaus": "Gerät.haus",
+                    "Gerätehaus": "GH",
                     "Keine Alarmierung": "Kein Alarm",
                 }
                 return _map.get(name, name)
