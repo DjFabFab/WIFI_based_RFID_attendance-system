@@ -29,6 +29,8 @@ html,body{height:100vh;overflow:hidden}
 .dot-primary{background:#17a2b8}
 .dot-info{background:#17a2b8}
 .dot-warning{background:#ffc107}
+.dot-danger{background:#dc3545}
+.dot-dark{background:#8b0000}
 .dot-secondary{background:#6c757d}
 .alarm-idle-tile{border:2px solid #6c757d;background:rgba(108,117,125,.08);text-align:center;justify-content:center;align-items:center}
 .alarm-idle-tile .alarm-tile-value{font-size:1.8rem;color:#6c757d}
@@ -82,7 +84,7 @@ html,body{height:100vh;overflow:hidden}
         <div class="alarm-roles">
           {% for s in status_display %}
           <div class="alarm-role">
-            <span class="alarm-role-name" style="color:{% if s.color == 'success' %}#28a745{% elif s.color == 'primary' or s.color == 'info' %}#17a2b8{% elif s.color == 'warning' %}#ffc107{% else %}#6c757d{% endif %}">{{ s.label }}</span>
+            <span class="alarm-role-name" style="color:{% if s.color == 'success' %}#28a745{% elif s.color == 'primary' or s.color == 'info' %}#17a2b8{% elif s.color == 'warning' %}#ffc107{% elif s.color == 'danger' %}#dc3545{% elif s.color == 'dark' %}#8b0000{% else %}#6c757d{% endif %}">{{ s.label }}</span>
             <span class="alarm-role-members">{{ s.count }}</span>
           </div>
           {% endfor %}
@@ -93,12 +95,11 @@ html,body{height:100vh;overflow:hidden}
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Einsatzkräfte</div>
-        {% if role_names %}
+        {% if role_counts %}
         <div class="alarm-roles">
-          {% if role_names.AGT %}<div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members">{% for name in role_names.AGT %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>{% endif %}
-          {% if role_names.MA %}<div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members">{% for name in role_names.MA %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>{% endif %}
-          {% if role_names.GF %}<div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members">{% for name in role_names.GF %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>{% endif %}
-          {% if not role_names.AGT and not role_names.MA and not role_names.GF %}<div class="alarm-tile-value" style="font-size:1rem">—</div>{% endif %}
+          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members">{{ role_counts.AGT }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members">{{ role_counts.MA }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members">{{ role_counts.GF }}</span></div>
         </div>
         {% else %}
         <div class="alarm-tile-value" style="font-size:1rem">—</div>

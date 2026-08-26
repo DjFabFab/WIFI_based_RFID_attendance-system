@@ -1,6 +1,8 @@
 {
   "78645": "success",
-  "78647": "warning",
-  "78646": "primary",
-  "78650": "info"
+  "78646": "warning",
+  "78647": "danger",
+  "78650": "primary",
+  "79817": "secondary",
+  "86776": "dark"
 }

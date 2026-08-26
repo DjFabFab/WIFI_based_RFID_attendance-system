@@ -399,7 +399,7 @@ def get_alarm_display(payload: dict) -> dict:
         try:
             _color_map_for_names = {}
             try:
-                default_color_map2 = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+                default_color_map2 = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
                 for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_status.json",
                           pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_status.json"]:
                     if p.exists():
@@ -409,7 +409,7 @@ def get_alarm_display(payload: dict) -> dict:
                         break
                 _color_map_for_names = default_color_map2
             except Exception:
-                _color_map_for_names = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+                _color_map_for_names = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
 
             _role_map2 = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
             try:
@@ -546,8 +546,8 @@ def get_alarm_display(payload: dict) -> dict:
                                 if name not in role_names[role]:
                                     role_names[role].append(name)
 
-            _color_order = {"success": 0, "primary": 1, "info": 2, "warning": 3, "secondary": 4}
-            crew_list.sort(key=lambda x: (_color_order.get(x["color"], 5), x["name"]))
+            _color_order = {"success": 0, "primary": 1, "info": 2, "warning": 3, "danger": 4, "dark": 5, "secondary": 6}
+            crew_list.sort(key=lambda x: (_color_order.get(x["color"], 7), x["name"]))
         except Exception:
             crew_list = []
             role_names = {"AGT": [], "MA": [], "GF": []}
@@ -558,7 +558,7 @@ def get_alarm_display(payload: dict) -> dict:
         color_map = {}
         try:
             # try to load status color mapping
-            default_color_map = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+            default_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
             # attempt to load from file
             for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_status.json",
                       pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_status.json"]:
@@ -569,7 +569,7 @@ def get_alarm_display(payload: dict) -> dict:
                     break
             color_map = default_color_map
         except Exception:
-            color_map = {"78645": "success", "78647": "warning", "78646": "primary"}
+            color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
         for sid, cnt in status_counts.items():
             label = sid
             try:
