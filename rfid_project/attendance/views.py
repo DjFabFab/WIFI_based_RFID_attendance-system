@@ -388,8 +388,9 @@ def get_alarm_display(payload: dict) -> dict:
                                         status_counts[str(sid)] = all_cnt
                         if not any(v > 0 for v in role_counts.values()):
                             _available_colors = {"success", "primary", "info", "warning"}
+                            _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
                             for sid, sdata in m1.items():
-                                if color_map.get(str(sid)) not in _available_colors:
+                                if _monitor_color_map.get(str(sid)) not in _available_colors:
                                     continue
                                 if isinstance(sdata, dict):
                                     quals = sdata.get("qualification", {})
