@@ -366,13 +366,15 @@ def get_alarm_display(payload: dict) -> dict:
                         cm = data.get(ck)
                         if isinstance(cm, dict) and cm:
                             cluster_map.update(cm)
-                # lookup
                 for uid in responded_user_ids:
                     uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
                     if not isinstance(uinfo, dict):
-                        # try str key
                         uinfo = cluster_map.get(str(uid))
                     if not isinstance(uinfo, dict):
+                        continue
+                    _user_sid = _user_status.get(str(uid), "")
+                    _user_color = _color_map_for_names.get(_user_sid, "secondary")
+                    if _user_color not in ("success", "primary", "info", "warning"):
                         continue
                     quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
                     if not isinstance(quals, list):
@@ -571,6 +573,8 @@ def get_alarm_display(payload: dict) -> dict:
         except Exception:
             color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
         for sid, cnt in status_counts.items():
+            if str(sid) == "0":
+                continue
             label = sid
             try:
                 status_name_map = {}
@@ -789,25 +793,6 @@ def edit(request):
 	messages.info(request, 'Profile Updated')
 	request.session.pop('selected_card_id', None)
 	return redirect('/manage')
-
-
-def search(request):
-	search_id = request.GET.get('search') or request.POST.get('search')
-	if search_id:
-		try:
-			search_id = int(search_id)
-		except (TypeError, ValueError):
-			search_id = None
-		sel_user = Student.objects.filter(id=search_id).first() if search_id else None
-		logf = Log.objects.filter(
-			ida=search_id,
-			date__year=datetime.date.today().year,
-			date__month=datetime.date.today().month,
-		).order_by('-id') if search_id else Log.objects.none()
-		dataset = {'use': sel_user, 'log': logf}
-		return render(request, 'attendance/search.html', dataset)
-	else:
-		return redirect('/home')
 
 
 def present(request):
