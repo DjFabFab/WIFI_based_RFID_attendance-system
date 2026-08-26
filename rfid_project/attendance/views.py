@@ -335,72 +335,47 @@ def get_alarm_display(payload: dict) -> dict:
                             status_counts[str(sid)] = cnt
                     except Exception:
                         continue
-
-                responded_user_ids = set()
-                for users in candidate_status.values():
-                    if isinstance(users, dict):
-                        for uid in users.keys():
-                            responded_user_ids.add(str(uid))
-                    elif isinstance(users, list):
-                        for uid in users:
-                            responded_user_ids.add(str(uid))
-
-                if responded_user_ids:
-                    cluster_map = {}
-                    cluster_obj = data.get("cluster")
-                    if isinstance(cluster_obj, dict):
-                        consumer = cluster_obj.get("consumer")
-                        if isinstance(consumer, dict):
-                            cluster_map = consumer
-                    for uid in responded_user_ids:
-                        uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
-                        if not isinstance(uinfo, dict):
-                            uinfo = cluster_map.get(str(uid))
-                        if not isinstance(uinfo, dict):
-                            continue
-                        _user_sid = _user_status.get(str(uid), "")
-                        _user_color = _color_map_for_names.get(_user_sid, "secondary")
-                        if _user_color not in ("success", "primary", "info", "warning"):
-                            continue
-                        quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
-                        if not isinstance(quals, list):
-                            continue
-                        qset = set()
-                        for q in quals:
-                            try:
-                                qset.add(int(q))
-                            except Exception:
-                                continue
-                        for role, qids in role_map.items():
-                            if any(q in qset for q in qids):
-                                role_counts[role] += 1
-
-            if not status_counts or not any(v > 0 for v in role_counts.values()):
-                monitor = data.get("monitor")
-                if isinstance(monitor, dict):
-                    m1 = monitor.get("1")
-                    if isinstance(m1, dict):
-                        if not status_counts:
-                            for sid, sdata in m1.items():
-                                if isinstance(sdata, dict):
-                                    all_cnt = sdata.get("all", 0)
-                                    if all_cnt:
-                                        status_counts[str(sid)] = all_cnt
-                        if not any(v > 0 for v in role_counts.values()):
-                            _available_colors = {"success", "primary", "info", "warning"}
-                            _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
-                            for sid, sdata in m1.items():
-                                if _monitor_color_map.get(str(sid)) not in _available_colors:
-                                    continue
-                                if isinstance(sdata, dict):
-                                    quals = sdata.get("qualification", {})
-                                    if isinstance(quals, dict):
-                                        for role, qids in role_map.items():
-                                            for qid in qids:
-                                                role_counts[role] += int(quals.get(str(qid), 0))
         except Exception:
             status_counts = {}
-            role_counts = {"AGT": 0, "MA": 0, "GF": 0}
+
+        try:
+            monitor = data.get("monitor")
+            if isinstance(monitor, dict):
+                m1 = monitor.get("1")
+                if isinstance(m1, dict):
+                    if not status_counts:
+                        for sid, sdata in m1.items():
+                            if isinstance(sdata, dict):
+                                all_cnt = sdata.get("all", 0)
+                                if all_cnt:
+                                    status_counts[str(sid)] = all_cnt
+                    _available_colors = {"success", "primary", "info", "warning"}
+                    _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
+                    default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
+                    role_map = dict(default_role_map)
+                    try:
+                        for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
+                                  pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
+                            if p.exists():
+                                jm = json.loads(p.read_text(encoding="utf-8"))
+                                if isinstance(jm, dict):
+                                    for rk in ("AGT", "MA", "GF"):
+                                        if rk in jm and isinstance(jm[rk], list):
+                                            role_map[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
+                                break
+                    except Exception:
+                        pass
+                    for sid, sdata in m1.items():
+                        if _monitor_color_map.get(str(sid)) not in _available_colors:
+                            continue
+                        if isinstance(sdata, dict):
+                            quals = sdata.get("qualification", {})
+                            if isinstance(quals, dict):
+                                for role, qids in role_map.items():
+                                    for qid in qids:
+                                        role_counts[role] += int(quals.get(str(qid), 0))
+        except Exception:
+            pass
 
         crew_list = []
         role_names = {"AGT": [], "MA": [], "GF": []}
