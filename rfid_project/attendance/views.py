@@ -5,7 +5,9 @@ from django.conf import settings
 from .models import Student, Log
 from .uid_utils import preprocess_uid
 import datetime
+import json
 import os
+import pathlib
 import requests
 
 
@@ -46,6 +48,9 @@ def get_alarm_display(payload: dict) -> dict:
         "group_ids": [],
         "vehicle_names": [],
         "group_names": [],
+        "status_counts": {},
+        "status_display": [],
+        "role_counts": {"AGT": 0, "MA": 0, "GF": 0},
     }
     try:
         if not isinstance(payload, dict):
@@ -272,6 +277,148 @@ def get_alarm_display(payload: dict) -> dict:
         vehicle_names = _resolve(vehicle_ids, vehicle_map)
         group_names = _resolve(group_ids, group_map)
 
+        # --- Personnel status: counts per Divera status (only ucr_answered / alarm state) ---
+        # and role breakdown AGT/MA/GF. Only count statuses that were changed after alarm.
+        status_counts = {}
+        role_counts = {"AGT": 0, "MA": 0, "GF": 0}
+        try:
+            # 1. status counts: prefer selected alarm's ucr_answered / participants if present
+            candidate_status = None
+            for k in ("ucr_answered", "ucrAnswered", "responses", "participants", "attendees", "status_counts", "statusCounts"):
+                if k in selected and isinstance(selected[k], dict):
+                    candidate_status = selected[k]
+                    break
+            # fallback: data-level monitor filtered to alarm-relevant statuses
+            if candidate_status is None:
+                # check data-level keys that may hold per-alarm status
+                for dk in ("ucr_answered", "responses"):
+                    dv = data.get(dk)
+                    if isinstance(dv, dict) and dv:
+                        candidate_status = dv
+                        break
+            if isinstance(candidate_status, dict) and candidate_status:
+                for sid, users in candidate_status.items():
+                    try:
+                        # users may be dict of user->status or list
+                        if isinstance(users, dict):
+                            cnt = len(users)
+                        elif isinstance(users, list):
+                            cnt = len(users)
+                        elif isinstance(users, int):
+                            cnt = users
+                        else:
+                            cnt = 1
+                        # only include if count >0 (changed after alarm)
+                        if cnt > 0:
+                            status_counts[str(sid)] = cnt
+                    except Exception:
+                        continue
+            # 2. role counts: check qualifications in data.cluster / data.user
+            # load configurable mapping for AGT/MA/GF qualification IDs
+            default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
+            role_map = dict(default_role_map)
+            try:
+                # try deployment/alarm_roles.json relative to project
+                for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
+                          pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
+                    if p.exists():
+                        jm = json.loads(p.read_text(encoding="utf-8"))
+                        if isinstance(jm, dict):
+                            for rk in ("AGT", "MA", "GF"):
+                                if rk in jm and isinstance(jm[rk], list):
+                                    role_map[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
+                        break
+            except Exception:
+                pass
+            # collect users who responded (flatten candidate_status)
+            responded_user_ids = set()
+            if isinstance(candidate_status, dict):
+                for users in candidate_status.values():
+                    if isinstance(users, dict):
+                        for uid in users.keys():
+                            responded_user_ids.add(str(uid))
+                    elif isinstance(users, list):
+                        for uid in users:
+                            responded_user_ids.add(str(uid))
+            # if we have responded users, check their qualifications in cluster
+            if responded_user_ids:
+                # cluster holds user details with qualifications
+                cluster_map = {}
+                for ck in ("cluster", "users", "user"):
+                    cm = data.get(ck)
+                    if isinstance(cm, dict) and cm:
+                        cluster_map.update(cm)
+                # lookup
+                for uid in responded_user_ids:
+                    uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
+                    if not isinstance(uinfo, dict):
+                        # try str key
+                        uinfo = cluster_map.get(str(uid))
+                    if not isinstance(uinfo, dict):
+                        continue
+                    quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
+                    if not isinstance(quals, list):
+                        continue
+                    qset = set()
+                    for q in quals:
+                        try:
+                            qset.add(int(q))
+                        except Exception:
+                            continue
+                    for role, qids in role_map.items():
+                        if any(q in qset for q in qids):
+                            role_counts[role] += 1
+            else:
+                # no responded users -> try to infer from monitor qualification totals, but only if active
+                # keep role_counts as 0 to avoid misleading
+                pass
+        except Exception:
+            status_counts = {}
+            role_counts = {"AGT": 0, "MA": 0, "GF": 0}
+
+        # map status IDs to display labels/colors for kiosk (green/blue/yellow)
+        # default: known Divera statuses -> colors, fallback to hash
+        status_display = []
+        color_map = {}
+        try:
+            # try to load status color mapping
+            default_color_map = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+            # attempt to load from file
+            for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_status.json",
+                      pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_status.json"]:
+                if p.exists():
+                    jm = json.loads(p.read_text(encoding="utf-8"))
+                    if isinstance(jm, dict):
+                        default_color_map.update({str(k): str(v) for k, v in jm.items()})
+                    break
+            color_map = default_color_map
+        except Exception:
+            color_map = {"78645": "success", "78647": "warning", "78646": "primary"}
+        for sid, cnt in status_counts.items():
+            label = sid
+            # try to resolve name from ucr/cluster if available
+            try:
+                # ucr map may have name
+                ucr_map = data.get("ucr") or data.get("cluster") or {}
+                if isinstance(ucr_map, dict):
+                    info = ucr_map.get(sid) or ucr_map.get(str(sid))
+                    if isinstance(info, dict):
+                        label = info.get("name") or info.get("title") or info.get("label") or sid
+                    elif isinstance(info, str):
+                        label = info
+            except Exception:
+                pass
+            # color: green/blue/yellow requested -> map to bootstrap: success/primary/warning
+            color = color_map.get(str(sid))
+            if not color:
+                # deterministic fallback: hash to one of three
+                try:
+                    h = int(sid) % 3
+                    color = ["success", "primary", "warning"][h]
+                except Exception:
+                    color = "secondary"
+            status_display.append({"id": sid, "label": str(label), "count": cnt, "color": color})
+
         return {
             "active": active,
             "error": None,
@@ -288,6 +435,9 @@ def get_alarm_display(payload: dict) -> dict:
             "group_ids": group_ids,
             "vehicle_names": vehicle_names,
             "group_names": group_names,
+            "status_counts": status_counts,
+            "status_display": status_display,
+            "role_counts": role_counts,
         }
     except Exception:
         return dict(idle)
