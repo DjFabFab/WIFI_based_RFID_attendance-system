@@ -7,8 +7,9 @@
 (function () {
   'use strict';
 
-  /* Idle timeout in milliseconds (5 minutes) */
-  var IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+  /* Idle timeout in milliseconds (10 minutes) — must stay >5 min so the
+     screen doesn't appear blank during a short lull; wake on any touch */
+  var IDLE_TIMEOUT_MS = 10 * 60 * 1000;
   var WAKE_EVENTS = 'pointerdown touchstart keydown mousemove';
 
   var idleTimer = null;

@@ -400,7 +400,7 @@ body {
   transition: filter 1.5s ease;
 }
 body.kiosk-dimmed {
-  filter: brightness(0.15);
+  filter: brightness(0.45);
 }
 
 /* wake hint, only visible while dimmed */
