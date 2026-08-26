@@ -11,10 +11,14 @@
       <br>
       <div class="row">
         <div class="col-md-6">
-          <label>Geben Sie die ID ein, um die Karte auszuwählen</label>
+          <label>ID auswählen</label>
           <form class="form-inline" action="/cardselect/" method="post"> {% csrf_token %}
-            <input type="text" name="idsearch" class="form-control mb-2 mr-sm-2" id="inlineFormInputName2"
-              placeholder="ID eingeben">
+            <select name="idsearch" class="form-control mb-2 mr-sm-2" id="inlineFormInputName2" required>
+              <option value="" disabled selected>— Bitte wählen —</option>
+              {% for user in users %}
+                <option value="{{ user.id }}">{% if user.name %}{{ user.name }}{% else %}{{ user.id }}{% endif %}</option>
+              {% endfor %}
+            </select>
             <input type="submit" name="sel" class="btn btn-warning mb-2" value="Auswählen"></input>
             <button type="submit" name="del" class="btn btn-danger mb-2 ml-2 ">Entfernen</button>
           </form>

@@ -89,7 +89,8 @@ def manage1(request):
 
 
 def manage(request):
-	return render(request, 'attendance/manage.html')
+	users = Student.objects.order_by('-id')
+	return render(request, 'attendance/manage.html', {'users': users})
 
 
 def card(request):
