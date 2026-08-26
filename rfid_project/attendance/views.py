@@ -645,6 +645,22 @@ def index1(request):
 	return render(request, 'attendance/attendance.html', dataset)
 
 
+def search(request):
+	id_val = request.POST.get('search')
+	if id_val:
+		try:
+			sel_user = Student.objects.get(card_id=int(id_val))
+			logf = Log.objects.filter(
+				ida=id_val,
+				date__month=datetime.datetime.now().month,
+				date__year=datetime.datetime.now().year
+			).order_by('-id')
+			return render(request, 'attendance/search.html', {'use': sel_user, 'log': logf})
+		except (Student.DoesNotExist, ValueError):
+			return redirect('/')
+	return redirect('/')
+
+
 def index(request):
 	return render(request, 'attendance/index.html')
 
