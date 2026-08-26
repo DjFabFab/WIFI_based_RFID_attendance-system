@@ -1,24 +1,13 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
 from .models import Student, Log
 from .uid_utils import preprocess_uid
-from django.shortcuts import redirect
 import datetime
-
-global stat
-stat = ''
-# Create your views here.
-global selected
-selected = None
 
 
 def index1(request):
-	logf = []
-	logs = Log.objects.all()
-	for log in logs:
-		if str(log.date) == str(datetime.datetime.now())[:10]:
-			logf.append(log)
-	logf.reverse()
+	logf = Log.objects.filter(date=datetime.date.today()).order_by('-id')
 	dataset = {'log': logf}
 	return render(request, 'attendance/attendance.html', dataset)
 
@@ -38,67 +27,54 @@ def process(request):
 		card = request.GET.get("card_id", "kuch nahi mila")
 	# support deletion via ?card_id=...&delete=1
 	delete_flag = request.GET.get('delete', None)
-	users = Student.objects.all()
 	# if delete flag present, try to delete today's open Log for the card
 	if delete_flag is not None:
 		try:
 			cid = int(card)
-		except Exception:
+		except (ValueError, TypeError):
 			return HttpResponse('invalid card id')
-		# find logs for this card without time_out and date == today
-		logs = Log.objects.filter(card_id=cid, time_out__isnull=True)
-		# further filter by today's date
-		import datetime
-		today_str = str(datetime.datetime.now())[:10]
-		logs_today = [l for l in logs if str(l.date) == today_str]
-		if logs_today:
-			# delete the most recent one
-			logs_today.sort(key=lambda x: x.time_in, reverse=True)
-			logs_today[0].delete()
+		# find the most recent open Log for this card dated today
+		open_log = Log.objects.filter(
+			card_id=cid, time_out__isnull=True,
+			date=datetime.date.today()).order_by('-time_in').first()
+		if open_log:
+			open_log.delete()
 			return HttpResponse('deleted')
 		else:
 			return HttpResponse('no open entry')
 
 	# normal process: create or update attendance
-	for user in users:
-		if user.card_id == int(card):
-			ans = attend(user)
-			return HttpResponse(ans)
-	new_user = Student(card_id=int(card))
+	try:
+		card = int(card)
+	except (TypeError, ValueError):
+		return HttpResponse('invalid card id', status=400)
+	user = Student.objects.filter(card_id=card).first()
+	if user:
+		ans = attend(user)
+		return HttpResponse(ans)
+	new_user = Student(card_id=card)
 	new_user.save()
 	return HttpResponse('registered successfully')
 
 
 def attend(user):
-	if user.name == None:
-		statu = 'profile saved'
-		return statu
-	logs = Log.objects.all()
-	for log in logs:
-		if log.card_id == int(user.card_id):
-			# if str(log.date) == str(datetime.datetime.now())[:10]:
-				if log.time_out == None:
-					log.time_out = datetime.datetime.now()
-					log.save()
-					statu = 'logout'
-					return statu
-				else:
-					statu = 'time out already saved'
-					# return statu
+	if user.name is None:
+		return 'profile saved'
+	open_log = Log.objects.filter(
+		card_id=user.card_id, time_out__isnull=True).order_by('id').first()
+	if open_log:
+		open_log.time_out = datetime.datetime.now()
+		open_log.save()
+		return 'logout'
 	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, date=datetime.datetime.now(),
 			  time_in=datetime.datetime.now(), status='')
 	new_log.save()
-	statu = 'auth'
-	return statu
+	return 'auth'
 
 
 def details1(request):
-	users = Student.objects.all()
-	us = []
-	for user in users:
-		us.append(user)
-	us.reverse()
-	userset = {'users': us}
+	users = Student.objects.order_by('-id')
+	userset = {'users': users}
 	return render(request, 'attendance/userdetails.html', userset)
 
 
@@ -107,98 +83,100 @@ def details(request):
 
 
 def manage1(request):
-	users = Student.objects.all()
-	us = []
-	for user in users:
-		us.append(user)
-	us.reverse()
-	global stat
-	userset = {'users': us}
-	stat = ''
+	users = Student.objects.order_by('-id')
+	userset = {'users': users}
 	return render(request, 'attendance/allusers.html', userset)
 
 
 def manage(request):
-	global stat
-	status = {'cardstatus': stat}
-	return render(request, 'attendance/manage.html', status)
+	return render(request, 'attendance/manage.html')
 
 
 def card(request):
-	users = Student.objects.all()
-	global stat
-	global selected
-	if request.method == 'POST':
-		if request.POST.get("sel"):
-			ids = request.POST.get('idsearch', 'kuch nahi mila')
-			for user in users:
-				if user.id == int(ids):
-					stat = 'Card is Selected'
-					selected = user
-					break
-				else:
-					stat = 'Card not found'
-			return redirect('/manage')
+	if request.method != 'POST':
+		return redirect('/manage')
+	if request.POST.get("sel"):
+		ids = request.POST.get('idsearch', 'kuch nahi mila')
+		try:
+			user = Student.objects.filter(id=int(ids)).first()
+		except (ValueError, TypeError):
+			user = None
+		if user:
+			messages.info(request, 'Card is Selected')
+			request.session['selected_card_id'] = user.id
 		else:
-			ids = request.POST.get('idsearch')
-			if Student.objects.filter(id=int(ids)).exists():
-				Student.objects.filter(id=int(ids)).update(
-					name=None, dob=None, sex=None, email=None, address=None)
-				stat = 'Deleted Successfully'
-			else:
-				stat = 'Card not found'
+			messages.info(request, 'Card not found')
+		return redirect('/manage')
+	else:
+		ids = request.POST.get('idsearch')
+		try:
+			cid = int(ids)
+		except (ValueError, TypeError):
+			messages.info(request, 'Card not found')
 			return redirect('/manage')
+		if Student.objects.filter(id=cid).exists():
+			Student.objects.filter(id=cid).update(
+				name=None, dob=None, sex=None, email=None, address=None)
+			messages.info(request, 'Deleted Successfully')
+		else:
+			messages.info(request, 'Card not found')
+		return redirect('/manage')
 
 
 def edit(request):
+	selected_id = request.session.get('selected_card_id')
+	if selected_id is None:
+		messages.info(request, 'No Card was Selected')
+		return redirect('/manage')
+	user = Student.objects.filter(id=selected_id).first()
+	if user is None:
+		messages.info(request, 'Card not found')
+		return redirect('/manage')
+	name = request.POST.get('name')
+	dob = request.POST.get('date')
+	email = request.POST.get('email')
+	gender = request.POST.get('gender')
+	address = request.POST.get('address')
+	new = [name, dob, email, gender, address]
+	old = [user.name, user.dob, user.email, user.sex, user.address]
 	i = 0
-	users = Student.objects.all()
-	global selected
-	global stat
-	if selected == None:
-		stat = 'No Card was Selected'
-		return redirect('/manage')
-	else:
-		name = request.POST.get('name')
-		dob = request.POST.get('date')
-		email = request.POST.get('email')
-		gender = request.POST.get('gender')
-		address = request.POST.get('address')
-		new = [name, dob, email, gender, address]
-		for user in users:
-			if user.card_id == selected.card_id:
-				old = [user.name, user.dob, user.email, user.sex, user.address]
-				for item in new:
-					if item == '' or item is None:
-						new[i] = old[i]
-					i = i + 1
-				user.name = new[0]
-				user.dob = new[1]
-				user.email = new[2]
-				user.sex = new[3]
-				user.address = new[4]
-				user.save()
-				stat = 'Profile Updated'
-		selected = None
-		return redirect('/manage')
+	for item in new:
+		if item == '' or item is None:
+			new[i] = old[i]
+		i = i + 1
+	user.name = new[0]
+	user.dob = new[1]
+	user.email = new[2]
+	user.sex = new[3]
+	user.address = new[4]
+	user.save()
+	messages.info(request, 'Profile Updated')
+	request.session.pop('selected_card_id', None)
+	return redirect('/manage')
 
 
 def search(request):
-	sel_user = ''
-	users = Student.objects.all()
-	logs = Log.objects.all()
-	path = request.get_full_path()
-	id = request.POST.get('search')
-	if (id):
-		logf = []
-		for user in users:
-			if str(user.id) == str(id):
-				sel_user = user
-		for log in logs:
-			if str(log.date)[5:7] == str(datetime.datetime.now())[5:7] and str(log.ida) == str(id):
-				logf.append(log)
-		logf.reverse()
+	search_id = request.GET.get('search') or request.POST.get('search')
+	if search_id:
+		try:
+			search_id = int(search_id)
+		except (TypeError, ValueError):
+			search_id = None
+		sel_user = Student.objects.filter(id=search_id).first() if search_id else None
+		logf = Log.objects.filter(
+			ida=search_id,
+			date__year=datetime.date.today().year,
+			date__month=datetime.date.today().month,
+		).order_by('-id') if search_id else Log.objects.none()
 		dataset = {'use': sel_user, 'log': logf}
 		return render(request, 'attendance/search.html', dataset)
 	else:
-		return redirect(request.META['HTTP_REFERER'])
+		return redirect('/home')
+
+
+def present(request):
+	logs = Log.objects.filter(
+		date=datetime.date.today(), time_out__isnull=True).order_by('-id')
+	data = [{'name': log.name, 'card_id': log.card_id,
+			 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
+	return JsonResponse(data, safe=False)

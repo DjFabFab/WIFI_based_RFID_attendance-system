@@ -1,0 +1,23 @@
+# Python venv — this project keeps its venv directly inside rfid_project/
+# (see AGENTS.md: `python3 -m venv rfid_project`). Ignore its layout so a
+# bare `*` is not needed (a bare `*` also hides real source files).
+/bin/
+/include/
+/lib/
+/lib64
+/pyvenv.cfg
+/venv/
+
+# Python bytecode / caches
+__pycache__/
+*.pyc
+
+# Local SQLite database — recreated by `manage.py migrate`, never committed
+db.sqlite3
+db.sqlite3.bak
+
+# Stray scaffold app copied into the tree (not registered in INSTALLED_APPS)
+/test/
+
+# Real Divera247 access key -- never commit this file
+deployment/divera_kiosk.env

@@ -1,0 +1,14 @@
+[Unit]
+Description=Presency Divera alarm kiosk switcher
+After=rfid-server.service network-online.target
+
+[Service]
+Type=simple
+User=pi
+EnvironmentFile=/home/pi/WIFI_based_RFID_attendance-system/rfid_project/deployment/divera_kiosk.env
+ExecStart=/home/pi/WIFI_based_RFID_attendance-system/rfid_project/bin/python3 /home/pi/WIFI_based_RFID_attendance-system/rfid_project/divera_kiosk.py
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

@@ -29,4 +29,5 @@ urlpatterns = [
     path('cardselect/', views.card , name = 'card'),
     path('cardedit/', views.edit , name = 'cardedit'),
     path('searchuser/', views.search , name = 'search'),
+    path('present/', views.present, name = 'present'),
 ]

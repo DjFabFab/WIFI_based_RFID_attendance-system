@@ -1,16 +1,16 @@
 # WIFI_based_RFID_attendance-system_using_NodeMcu_and_Django
 
--> This attendance system is based on RFID technology for identification. It sends the attendance data to the server using wifi.
+-> This attendance system is based on RFID technology for identification. The reader is an ESP8266/ESP32 running ESPHome (PN532 NFC reader over I2C) that streams the raw card UID over its local USB-serial port.
 
--> For reading RFID card and sending data to server RFID module RC522 and NodeMCU is used. The server side code is written using django and frontend is made using Bootstrap 4.
+-> A host-side Python bridge (`rfid_project/rfid_serial_bridge.py`) reads that serial port (udev symlink `/dev/ttyRFID`) and forwards each UID to the Django backend. The server-side code is written using Django and the frontend is made using Bootstrap 4.
 
--> It also do not requires the wifi credentials to be hard coded inside it. I have used Arduino's Wifi manager library for this. It automatically creates a hotspot when it doesn't find previous or saved wifi. You can simply connect with its hotspot using a device and can give required wifi credentials and it will connect to that easily.
+-> No Wi-Fi or HTTP is used on the device — all attendance data flows over the local USB connection to the Django server, which stores it in SQLite.
 
 # Presency
 
-Presency ist ein leichtgewichtiges Anwesenheits‑System, das RFID‑Karten (RC522) mit einem NodeMCU/ESP-Gerät liest und Anwesenheitsdaten per WLAN an einen Django‑Server sendet.
+Presency ist ein leichtgewichtiges Anwesenheitssystem, das RFID-Karten mit einem ESP8266/ESP32 (PN532 per I2C, geflasht via ESPHome) liest und die UID über die lokale USB-Seriell-Verbindung an einen Django-Server weiterleitet.
 
-Kurz: NodeMCU + RC522 → HTTP GET /process/?card_id=... → Django speichert Anwesenheiten in SQLite.
+Kurz: ESP8266/ESP32 (ESPHome) -> USB-Serial (/dev/ttyRFID) -> `rfid_serial_bridge.py` -> HTTP GET /process/?uid=... -> Django speichert Anwesenheiten in SQLite.
 
 # Technology Stack
 SOFTWARE:
@@ -20,8 +20,8 @@ SOFTWARE:
 4) HTML und CSS
 
 HARDWARE:
-1) NodeMCU
-2) RC-522 RFID Reader
+1) ESP8266/ESP32 (mit ESPHome geflasht)
+2) PN532 NFC-Reader (I2C)
 3) LEDs und Buzzer
 
 # SCREENSHOTS

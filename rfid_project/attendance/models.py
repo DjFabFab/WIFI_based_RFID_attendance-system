@@ -3,7 +3,7 @@ from django.utils import timezone
 
 # Create your models here.
 class Student(models.Model):
-    card_id = models.IntegerField()
+    card_id = models.BigIntegerField()
     name = models.CharField(max_length=50, blank=True, null=True)
     dob = models.DateField(blank=True, null=True)
     sex = models.CharField(max_length=7, blank=True, null=True)
@@ -19,7 +19,7 @@ class Student(models.Model):
 
 class Log(models.Model):
     ida = models.IntegerField(default=0)
-    card_id = models.IntegerField()
+    card_id = models.BigIntegerField()
     name = models.CharField(max_length=50)
     date = models.DateField(default=timezone.now)
     time_in = models.TimeField(default=timezone.now)

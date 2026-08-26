@@ -1,7 +1,11 @@
+# Protocol:
+# The device streams the raw hyphenated RFID UID (e.g., "74-10-37-94")
+# followed by a newline ("\n") over UART0-TX (GPIO1) at 115200 baud.
+# No Wi-Fi, HTTP, or API components are used.
+
 substitutions:
   name: nfc-reader
   friendly_name: nfc-reader
-  http_endpoint: "http://10.42.0.1:8000/process/?card_id="
 
 esphome:
   name: ${name}
@@ -71,3 +75,4 @@ light:
   id: activity_led
   name: "${friendly_name} LED"
   restore_mode: ALWAYS_OFF
+

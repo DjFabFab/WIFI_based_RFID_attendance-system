@@ -1,0 +1,426 @@
+/* ==========================================================================
+   Presency — Kiosk theme
+   Raspberry Pi 7" touchscreen (800x480, fullscreen kiosk Chrome, dark room)
+   --------------------------------------------------------------------------
+   Layer:  local override loaded AFTER the Bootstrap 4.3.1 CDN stylesheet.
+   Goal:   dark, high-contrast, readable from arm's length; every touch
+           target >= 48x48 px; table rows >= 56 px; no accidental zoom or
+           tap highlight; no horizontal scrolling at 800px width.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* surfaces */
+  --kiosk-bg:            #0e1116;   /* page background          */
+  --kiosk-surface:       #181d26;   /* panels / tables          */
+  --kiosk-surface-2:     #20262f;   /* raised panels, navbar    */
+  --kiosk-border:        #2b3340;   /* hairlines                */
+
+  /* text */
+  --kiosk-text:          #eef2f8;   /* primary text (hi-contrast) */
+  --kiosk-text-soft:     #b6bfd0;   /* secondary text             */
+  --kiosk-text-muted:    #8a94a8;   /* muted / labels             */
+
+  /* accents (tuned for dark backgrounds, WCAG-friendly) */
+  --kiosk-accent:        #4d8dff;   /* links / focus / info      */
+  --kiosk-success:       #3ddc84;   /* positive states           */
+  --kiosk-warning:       #ffc14d;   /* warn / select actions     */
+  --kiosk-danger:        #ff5a5a;   /* delete / remove           */
+
+  /* touch / type */
+  --kiosk-touch:         48px;      /* minimum touch target      */
+  --kiosk-row:           56px;      /* minimum table row height  */
+  --kiosk-radius:        12px;
+  --kiosk-font:          -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+                         Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   2. Base — dark canvas, tap / zoom / selection guards
+   -------------------------------------------------------------------------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;          /* block double-tap-zoom & pinch on page */
+}
+
+body {
+  background: var(--kiosk-bg);
+  color: var(--kiosk-text);
+  font-family: var(--kiosk-font);
+  font-size: 20px;                     /* base type — readable from arm's length */
+  line-height: 1.45;
+  overflow-x: hidden;                  /* nothing may scroll sideways at 800px */
+  user-select: none;                   /* kiosk: no accidental text selection */
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent; /* no grey flash on tap */
+  margin: 0;
+}
+
+/* everything interactive: no highlight, no double-tap zoom */
+a, button, input, select, textarea, .btn, .nav-link, .navbar-toggler,
+label, td, th {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   3. Typography — bold, large, high contrast
+   -------------------------------------------------------------------------- */
+h1 { font-size: 2.5rem;   font-weight: 700; color: var(--kiosk-text); }
+h2 { font-size: 2rem;     font-weight: 700; color: var(--kiosk-text); }
+h3 { font-size: 1.6rem;   font-weight: 600; color: var(--kiosk-text); }
+h6 { font-size: 1.1rem;   font-weight: 600; color: var(--kiosk-text-soft); }
+
+a {
+  color: var(--kiosk-accent);
+  text-decoration: none;
+}
+a:hover, a:focus { color: #79a8ff; text-decoration: underline; }
+
+/* labels inside forms */
+label {
+  color: var(--kiosk-text-soft);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+
+/* --------------------------------------------------------------------------
+   4. Navbar — compact but fully touch-friendly
+   -------------------------------------------------------------------------- */
+.navbar {
+  background: var(--kiosk-surface-2);
+  border-bottom: 1px solid var(--kiosk-border);
+  padding: .3rem .6rem;
+  min-height: 56px;
+  flex-wrap: wrap;
+}
+
+.navbar-brand {
+  color: var(--kiosk-text) !important;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  padding: .45rem .6rem;
+}
+
+.navbar .nav-link {
+  color: var(--kiosk-text-soft) !important;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: .8rem .9rem;                /* >= 48px hit area */
+  border-radius: var(--kiosk-radius);
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: var(--kiosk-text) !important;
+  background: var(--kiosk-surface);
+}
+
+.navbar-toggler {
+  min-width: var(--kiosk-touch);
+  min-height: var(--kiosk-touch);
+  border-color: var(--kiosk-border);
+}
+.navbar-toggler-icon {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+/* navbar search form — kept, restyled for dark theme + big touch */
+.navbar .form-inline .form-control {
+  min-height: var(--kiosk-touch);
+  width: 260px;
+}
+
+/* --------------------------------------------------------------------------
+   5. Tables — dark, tall rows, readable from arm's length
+   -------------------------------------------------------------------------- */
+.table {
+  color: var(--kiosk-text);
+  background: var(--kiosk-surface);
+  border-radius: var(--kiosk-radius);
+  border: 1px solid var(--kiosk-border);
+  margin-bottom: 0;
+}
+
+.table thead th {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--kiosk-text);
+  background: var(--kiosk-surface-2);
+  border-bottom: 2px solid var(--kiosk-border);
+  padding: .8rem .9rem;
+}
+
+.table td {
+  font-size: 1.15rem;                  /* ~18.4px @20px base */
+  color: var(--kiosk-text);
+  border-top: 1px solid var(--kiosk-border);
+  padding: .9rem .9rem;                /* drives row height >= 56px */
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  min-height: var(--kiosk-row);
+}
+.table tbody tr:hover {
+  background: rgba(77, 141, 255, .06);
+}
+
+/* Bootstrap's light thead variant -> dark kiosk thead */
+.table .thead-light th,
+.table .thead-light td {
+  color: var(--kiosk-text);
+  background-color: var(--kiosk-surface-2);
+  border-color: var(--kiosk-border);
+}
+
+/* tbody fragments injected by AJAX are plain <tr>s */
+#cards, #manage, #userdetails { }
+
+/* --------------------------------------------------------------------------
+   6. Buttons — every button a >= 48x48 px touch target
+   -------------------------------------------------------------------------- */
+.btn {
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: var(--kiosk-touch);
+  min-height: var(--kiosk-touch);
+  padding: .65rem 1.4rem;
+  border-radius: var(--kiosk-radius);
+  border-width: 2px;
+}
+
+/* even the "small" delete button must be a big touch target */
+.btn-sm {
+  font-size: 1.15rem;
+  min-width: 56px;
+  min-height: var(--kiosk-touch);
+  padding: .7rem .9rem;
+  line-height: 1;
+}
+
+/* delete buttons — vivid red, unmistakable at a glance */
+.btn-danger {
+  background: var(--kiosk-danger);
+  border-color: var(--kiosk-danger);
+  color: #1a0e0e;
+}
+.btn-danger:hover, .btn-danger:focus {
+  background: #ff7878;
+  border-color: #ff7878;
+  color: #1a0e0e;
+}
+
+/* keep the inline trash icon legible on the enlarged button */
+.delete-btn svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+  margin: 0 auto;
+}
+
+.btn-warning {
+  background: var(--kiosk-warning);
+  border-color: var(--kiosk-warning);
+  color: #241a05;
+}
+.btn-warning:hover, .btn-warning:focus {
+  background: #ffd27a;
+  border-color: #ffd27a;
+  color: #241a05;
+}
+
+.btn-outline-success {
+  color: var(--kiosk-success);
+  border-color: var(--kiosk-success);
+}
+.btn-outline-success:hover, .btn-outline-success:focus {
+  background: var(--kiosk-success);
+  border-color: var(--kiosk-success);
+  color: #04210f;
+}
+
+/* --------------------------------------------------------------------------
+   7. Forms — dark inputs, big touch fields
+   -------------------------------------------------------------------------- */
+.form-control {
+  min-height: var(--kiosk-touch);
+  font-size: 1.15rem;
+  color: var(--kiosk-text);
+  background: var(--kiosk-bg);
+  border: 1px solid var(--kiosk-border);
+  border-radius: var(--kiosk-radius);
+  padding: .6rem .9rem;
+}
+.form-control:focus {
+  background: var(--kiosk-bg);
+  border-color: var(--kiosk-accent);
+  box-shadow: 0 0 0 .2rem rgba(77, 141, 255, .25);
+  color: var(--kiosk-text);
+}
+.form-control::placeholder { color: var(--kiosk-text-muted); }
+
+select.form-control, .form-control[type="date"], .form-control[type="time"] {
+  color: var(--kiosk-text);
+}
+
+/* --------------------------------------------------------------------------
+   8. Panels & page sections (search.html, manage.html cards etc.)
+   -------------------------------------------------------------------------- */
+.container-fluid {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.card {
+  background: var(--kiosk-surface);
+  border: 1px solid var(--kiosk-border);
+  border-radius: var(--kiosk-radius);
+}
+.card-body {
+  background: var(--kiosk-surface);
+  color: var(--kiosk-text);
+}
+.card.border-primary { border-color: var(--kiosk-accent) !important; }
+
+/* Bootstrap background utilities used by templates -> kiosk dark panels.
+   Bootstrap 4 declares these with !important, so we match it. */
+.bg-info {
+  background-color: var(--kiosk-surface) !important;
+  color: var(--kiosk-text) !important;
+}
+.bg-warning {
+  background-color: var(--kiosk-surface-2) !important;
+  color: var(--kiosk-text) !important;
+}
+.bg-dark {
+  background-color: var(--kiosk-surface-2) !important;
+}
+
+/* text utility colors -> kiosk-tuned high contrast */
+.text-danger { color: var(--kiosk-danger) !important; }
+.text-success { color: var(--kiosk-success) !important; }
+.text-warning { color: var(--kiosk-warning) !important; }
+
+/* --------------------------------------------------------------------------
+   9. Focus visibility for keyboard/touch focus
+   -------------------------------------------------------------------------- */
+.btn:focus, .form-control:focus, .nav-link:focus, a:focus {
+  outline: 2px solid var(--kiosk-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   10. Responsive — guarantee the 800x480 layout never scrolls sideways
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  body { font-size: 19px; }
+  h1 { font-size: 2.1rem; }
+  h2 { font-size: 1.7rem; }
+  .navbar .form-inline .form-control { width: 180px; }
+  .table td { font-size: 1.05rem; padding: .85rem .7rem; }
+  .table thead th { font-size: 1rem; padding: .7rem .7rem; }
+}
+
+/* Very small screens (should not happen on the kiosk, but be safe) */
+@media (max-width: 420px) {
+  body { font-size: 17px; }
+  .btn { width: 100%; }
+}
+
+/* --------------------------------------------------------------------------
+   11. Touch & kiosk polish — 48px targets, live clock, empty state,
+       armed delete state, idle screensaver dimming
+   -------------------------------------------------------------------------- */
+
+/* hard floor: every interactive control is a >= 48px touch target */
+button, .btn, input[type=text], input[type=search], .form-control {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+/* comfortable table rows */
+table td, table th { padding: .6rem .5rem; }
+
+/* live clock + date header on the attendance kiosk */
+.kiosk-clock {
+  padding: .8rem 1rem;
+  border: 1px solid var(--kiosk-border);
+  border-radius: var(--kiosk-radius);
+  background: var(--kiosk-surface);
+  display: inline-block;
+  min-width: 300px;
+}
+.clock-time {
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--kiosk-text);
+  font-variant-numeric: tabular-nums;
+}
+.clock-date {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--kiosk-text-soft);
+  margin-top: .25rem;
+}
+
+/* empty state — large, centered, friendly */
+.kiosk-empty {
+  padding: 3rem 1rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--kiosk-text-soft);
+  background: var(--kiosk-surface);
+  border: 1px dashed var(--kiosk-border);
+  border-radius: var(--kiosk-radius);
+}
+.kiosk-empty p { margin: 0; }
+
+/* two-tap delete: armed state — solid red, scaled up, "Sicher?" */
+.delete-btn.armed {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+  transform: scale(1.1);
+  font-weight: 700;
+}
+.delete-btn {
+  transition: transform .12s ease, background-color .12s ease;
+}
+
+/* idle screensaver — dim the whole page, wake on any touch */
+body {
+  transition: filter 1.5s ease;
+}
+body.kiosk-dimmed {
+  filter: brightness(0.15);
+}
+
+/* wake hint, only visible while dimmed */
+.kiosk-wake-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  padding: .6rem 1.4rem;
+  border-radius: var(--kiosk-radius);
+  background: var(--kiosk-surface-2);
+  border: 1px solid var(--kiosk-border);
+  color: var(--kiosk-text-soft);
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+  z-index: 1100;
+}
+body.kiosk-dimmed .kiosk-wake-hint {
+  opacity: 1;
+}
