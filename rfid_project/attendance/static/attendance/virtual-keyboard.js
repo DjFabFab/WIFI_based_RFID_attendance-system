@@ -221,10 +221,32 @@
       e.preventDefault();
     }, { passive: false });
 
-    // Show on focus for text inputs
+    // Don't show keyboard on initial page load — only on user gesture.
+    // Some browsers may focus the first input on load; ignore focusin
+    // for the first second unless it was triggered by a recent user interaction.
+    var pageLoadTime = Date.now();
+    var lastUserInteraction = 0;
+    document.addEventListener('pointerdown', function () { lastUserInteraction = Date.now(); }, true);
+    document.addEventListener('touchstart', function () { lastUserInteraction = Date.now(); }, true);
+
+    // If something is autofocused on load, blur it so the keyboard doesn't pop up.
+    setTimeout(function () {
+      var ae = document.activeElement;
+      if (isTextInput(ae) && Date.now() - pageLoadTime < 1500 && Date.now() - lastUserInteraction > 1000) {
+        ae.blur();
+      }
+    }, 100);
+
+    // Show on focus for text inputs, but only if triggered by user interaction
+    // or more than 1s after page load (prevents autofocus on load).
     document.addEventListener('focusin', function (e) {
       if (isTextInput(e.target)) {
-        showKeyboard(e.target);
+        var sinceLoad = Date.now() - pageLoadTime;
+        var sinceInteraction = Date.now() - lastUserInteraction;
+        // Allow if user recently interacted, or if it's been >1s since load (user tabbed/clicked)
+        if (sinceInteraction < 2000 || sinceLoad > 1000) {
+          showKeyboard(e.target);
+        }
       }
     });
 
