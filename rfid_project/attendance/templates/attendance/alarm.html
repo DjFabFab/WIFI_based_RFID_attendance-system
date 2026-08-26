@@ -5,29 +5,27 @@
 <div class="container-fluid alarm-fit">
   {% if error %}
   <div class="alert alert-warning text-center py-2" role="alert">Daten nicht verfügbar (letzter Check {{ now|date:"d.m.Y H:i:s" }}) {% if error != "Daten nicht verfügbar" %}- {{ error }}{% endif %}</div>
-  <div class="alarm-idle text-center"><h1 style="font-size:2.2rem;font-weight:700">Kein aktiver Alarm</h1><p class="text-muted small">Stand: {{ now|date:"d.m.Y H:i:s" }}</p></div>
-  {% elif active %}
+  {% endif %}
   <div class="alarm-active text-center">
-    <h1 class="alarm-title font-weight-bold">{{ title }}</h1>
-    {% if priority %}<span class="badge badge-danger" style="font-size:1.1rem;">Priorität</span>{% endif %}
+    <h1 class="alarm-title font-weight-bold">{% if active and title %}{{ title }}{% else %}Kein aktiver Alarm{% endif %}</h1>
+    {% if active and priority %}<span class="badge badge-danger" style="font-size:1.1rem;">Priorität</span>{% else %}{% if not active %}<span class="text-muted">—</span>{% endif %}{% endif %}
     <div class="mt-3">
-      {% if address %}
+      {% if active and address %}
         <p class="alarm-address lead mb-2">{{ address }}</p>
-      {% elif lat and lng %}
+      {% elif active and lat and lng %}
         <p class="lead mb-2"><a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=18/{{ lat }}/{{ lng }}" target="_blank" rel="noopener">{{ lat }}, {{ lng }} (Karte)</a></p>
+      {% else %}
+        <p class="alarm-address lead mb-2 text-muted">—</p>
       {% endif %}
-      {% if vehicle_names %}<div class="mt-2">{% for name in vehicle_names %}<span class="badge badge-secondary mr-2" style="font-size:1rem;">{{ name }}</span>{% endfor %}</div>{% endif %}
-      {% if group_names %}<div class="mt-2">{% for name in group_names %}<span class="badge badge-info mr-2">{{ name }}</span>{% endfor %}</div>{% endif %}
-      {% if status_display %}<div class="mt-3">{% for s in status_display %}<span class="badge badge-{{ s.color }} mr-2" style="font-size:1rem;">{{ s.label }}: {{ s.count }}</span>{% endfor %}</div>{% endif %}
-      {% if role_counts %}<div class="mt-2"><span class="badge badge-dark mr-2">AGT: {{ role_counts.AGT }}</span><span class="badge badge-dark mr-2">MA: {{ role_counts.MA }}</span><span class="badge badge-dark mr-2">GF: {{ role_counts.GF }}</span></div>{% endif %}
-      {% if duration %}<p class="mt-2 mb-1 small">Dauer: {{ duration }}</p>{% endif %}
-      {% if date %}<p class="text-muted small mb-1">{{ date }}</p>{% endif %}
+      {% if active and vehicle_names %}<div class="mt-2">{% for name in vehicle_names %}<span class="badge badge-secondary mr-2" style="font-size:1rem;">{{ name }}</span>{% endfor %}</div>{% else %}{% if not active or not vehicle_names %}<div class="mt-2"><span class="badge badge-secondary mr-2" style="font-size:1rem;">—</span></div>{% endif %}{% endif %}
+      {% if active and group_names %}<div class="mt-2">{% for name in group_names %}<span class="badge badge-info mr-2">{{ name }}</span>{% endfor %}</div>{% else %}{% if not active or not group_names %}<div class="mt-2"><span class="badge badge-info mr-2">—</span></div>{% endif %}{% endif %}
+      {% if active and status_display %}<div class="mt-3">{% for s in status_display %}<span class="badge badge-{{ s.color }} mr-2" style="font-size:1rem;">{{ s.label }}: {{ s.count }}</span>{% endfor %}</div>{% else %}<div class="mt-3"><span class="badge badge-secondary mr-2" style="font-size:1rem;">—</span></div>{% endif %}
+      {% if active and role_counts %}<div class="mt-2"><span class="badge badge-dark mr-2">AGT: {{ role_counts.AGT }}</span><span class="badge badge-dark mr-2">MA: {{ role_counts.MA }}</span><span class="badge badge-dark mr-2">GF: {{ role_counts.GF }}</span></div>{% else %}<div class="mt-2"><span class="badge badge-dark mr-2">AGT: —</span><span class="badge badge-dark mr-2">MA: —</span><span class="badge badge-dark mr-2">GF: —</span></div>{% endif %}
+      {% if active and duration %}<p class="mt-2 mb-1 small">Dauer: {{ duration }}</p>{% else %}{% if not active %}<p class="mt-2 mb-1 small text-muted">Dauer: —</p>{% endif %}{% endif %}
+      {% if active and date %}<p class="text-muted small mb-1">{{ date }}</p>{% else %}{% if not active %}<p class="text-muted small mb-1">—</p>{% endif %}{% endif %}
       <p class="text-muted small mb-0">Stand: {{ now|date:"d.m.Y H:i:s" }}</p>
     </div>
   </div>
-  {% else %}
-  <div class="alarm-idle text-center"><h1 style="font-size:2.2rem;font-weight:700">Kein aktiver Alarm</h1><p class="text-muted small">Stand: {{ now|date:"d.m.Y H:i:s" }}</p></div>
-  {% endif %}
 </div>
 {% endblock %}
 {% block js %}
