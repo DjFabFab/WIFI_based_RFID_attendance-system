@@ -65,3 +65,7 @@ To set up the udev symlink:
    `sudo udevadm control --reload-rules && sudo udevadm trigger`
 
 The service depends on `rfid-server.service` and will automatically restart on failure.
+
+## Local Alarm Dashboard (Divera kiosk)
+
+The optional Divera kiosk switcher (`rfid_project/divera_kiosk.py`, deployed via `rfid_project/deployment/divera-kiosk.service`) shows a local alarm dashboard instead of the external Divera site. Local alarm dashboard at `GET /alarm/` (API-key-driven, no login) — kiosk switches via CDP to `http://127.0.0.1:8000/alarm/` when active. The `DIVERA_PAGE_URL` in `rfid_project/deployment/divera_kiosk.env.template` defaults to `http://127.0.0.1:8000/alarm/`; override it to `https://www.divera247.com/` if you prefer the external Divera site. The optional `kiosk-browser.sh` handles the kiosk login note.

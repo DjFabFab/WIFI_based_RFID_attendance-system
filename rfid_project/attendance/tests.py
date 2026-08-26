@@ -1,5 +1,6 @@
+import os
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import divera_kiosk
 import rfid_serial_bridge
@@ -291,3 +292,151 @@ class ForwardUidTests(TestCase):
                     "http://api", self.uid, max_attempts=2)
         self.assertFalse(result)
         self.assertEqual(get.call_count, 2)
+
+
+class AlarmViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def _mock_success(self, payload):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = payload
+        return mock_resp
+
+    def test_alarm_active_renders_title_and_vehicle_name(self):
+        payload = {
+            "success": True,
+            "data": {
+                "alarm": {
+                    "items": [
+                        {
+                            "id": 1,
+                            "closed": False,
+                            "title": "Testalarm",
+                            "priority": True,
+                            "address": "Musterstr. 1",
+                            "vehicle": [68687],
+                        }
+                    ]
+                },
+                "vehicle": {"68687": {"name": "LF 10"}},
+            },
+        }
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)) as mock_get:
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("Testalarm", content)
+        self.assertIn("LF 10", content)
+        self.assertIn("Priorit", content)
+        self.assertEqual(resp["Cache-Control"], "no-store")
+        mock_get.assert_called_once()
+
+    def test_alarm_closed_shows_idle(self):
+        payload = {
+            "success": True,
+            "data": {"alarm": {"items": [{"id": 1, "closed": True, "title": "Old alarm"}]}},
+        }
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+        self.assertEqual(resp["Cache-Control"], "no-store")
+
+    def test_alarm_empty_items_shows_idle(self):
+        payload = {"success": True, "data": {"alarm": {"items": []}}}
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+
+    def test_alarm_items_as_dict(self):
+        payload = {
+            "success": True,
+            "data": {
+                "alarm": {
+                    "items": {
+                        "1": {"id": 1, "closed": False, "title": "DictAlarm", "priority": False},
+                        "2": {"id": 2, "closed": True, "title": "Old"},
+                    }
+                }
+            },
+        }
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("DictAlarm", content)
+        self.assertNotIn("Kein aktiver Alarm", content)
+
+    def test_alarm_malformed_payload_shows_idle(self):
+        payload = {"success": True, "data": {"alarm": {"items": "nope"}}}
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+        self.assertNotIn("Daten nicht verf", resp.content.decode())
+
+    def test_alarm_api_error_shows_banner(self):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 500
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=mock_resp):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("Daten nicht verf", content)
+        self.assertIn("Kein aktiver Alarm", content)
+        self.assertEqual(resp["Cache-Control"], "no-store")
+
+    def test_alarm_network_error_shows_banner(self):
+        import requests
+
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", side_effect=requests.exceptions.ConnectionError("down")):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("Daten nicht verf", content)
+        self.assertIn("Kein aktiver Alarm", content)
+        self.assertEqual(resp["Cache-Control"], "no-store")
+
+    def test_alarm_address_fallback_uses_map_link(self):
+        payload = {
+            "success": True,
+            "data": {
+                "alarm": {
+                    "items": [
+                        {
+                            "id": 2,
+                            "closed": False,
+                            "title": "AddrFallback",
+                            "address": "",
+                            "lat": 52.5,
+                            "lng": 13.4,
+                        }
+                    ]
+                }
+            },
+        }
+        with patch.dict(os.environ, {"DIVERA_ACCESS_KEY": "test-key"}):
+            with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
+                resp = self.client.get("/alarm/")
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn("AddrFallback", content)
+        self.assertIn("openstreetmap", content.lower())
+        self.assertIn("mlat=", content.lower())
+        self.assertTrue("52.5" in content or "52,5" in content)
+        self.assertTrue("13.4" in content or "13,4" in content)
+
+    def test_alarm_requires_get(self):
+        resp = self.client.post("/alarm/")
+        self.assertEqual(resp.status_code, 405)
+        self.assertIn("Method Not Allowed", resp.content.decode())

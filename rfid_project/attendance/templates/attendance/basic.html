@@ -11,6 +11,7 @@
 
 	<!-- Kiosk theme: dark, high-contrast, touch-friendly (overrides Bootstrap) -->
 	<link rel="stylesheet" href="{% static 'attendance/kiosk.css' %}">
+	{% block extra_head %}{% endblock %}
 
 	<title>{% block title %}{% endblock %}</title>
 </head>

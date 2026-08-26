@@ -30,4 +30,5 @@ urlpatterns = [
     path('cardedit/', views.edit , name = 'cardedit'),
     path('searchuser/', views.search , name = 'search'),
     path('present/', views.present, name = 'present'),
+    path('alarm/', views.alarm, name='alarm'),
 ]

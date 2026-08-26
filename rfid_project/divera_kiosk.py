@@ -33,7 +33,7 @@ log = logging.getLogger("divera_kiosk")
 
 DEFAULTS = {
     "divera_api_url": "https://app.divera247.com/api/v2/pull/all",
-    "divera_page_url": "https://www.divera247.com/",
+    "divera_page_url": "http://127.0.0.1:8000/alarm/",
     "kiosk_home_url": "http://127.0.0.1:8000/",
     "cdp_base": "http://127.0.0.1:9222",
     "poll_seconds": 15,
