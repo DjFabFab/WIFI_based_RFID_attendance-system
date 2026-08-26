@@ -574,6 +574,17 @@ def get_alarm_display(payload: dict) -> dict:
             label = sid
             try:
                 status_name_map = {}
+                cluster_status = {}
+                cluster_obj = data.get("cluster")
+                if isinstance(cluster_obj, dict):
+                    cs = cluster_obj.get("status")
+                    if isinstance(cs, dict):
+                        cluster_status = cs
+                for sk, sv in cluster_status.items():
+                    if isinstance(sv, dict):
+                        sname = sv.get("name") or ""
+                        if sname:
+                            status_name_map[str(sk)] = sname
                 ucr_raw = data.get("ucr")
                 if isinstance(ucr_raw, dict):
                     for ucr_uid, ucr_info in ucr_raw.items():
