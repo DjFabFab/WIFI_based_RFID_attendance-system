@@ -64,7 +64,7 @@
         $('#empty-state').prop('hidden', true);
         $('#cards-table').prop('hidden', false);
         $.each(rows, function (i, entry) {
-          var name = entry.name != null ? entry.name : '';
+          var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
           var $tr = $('<tr>');
           $('<td>').text(name).appendTo($tr);
           $('<td>').text(entry.date).appendTo($tr);

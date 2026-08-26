@@ -58,15 +58,14 @@ def process(request):
 
 
 def attend(user):
-	if user.name is None:
-		return 'profile saved'
+	display_name = user.name if user.name else str(user.card_id)
 	open_log = Log.objects.filter(
 		card_id=user.card_id, time_out__isnull=True).order_by('id').first()
 	if open_log:
 		open_log.time_out = datetime.datetime.now()
 		open_log.save()
 		return 'logout'
-	new_log = Log(ida=user.id, card_id=user.card_id, name=user.name, date=datetime.datetime.now(),
+	new_log = Log(ida=user.id, card_id=user.card_id, name=display_name, date=datetime.datetime.now(),
 			  time_in=datetime.datetime.now(), status='')
 	new_log.save()
 	return 'auth'
@@ -178,6 +177,6 @@ def search(request):
 def present(request):
 	logs = Log.objects.filter(
 		date=datetime.date.today(), time_out__isnull=True).order_by('-id')
-	data = [{'name': log.name, 'card_id': log.card_id,
+	data = [{'name': log.name if log.name else str(log.card_id), 'card_id': log.card_id,
 			 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
 	return JsonResponse(data, safe=False)

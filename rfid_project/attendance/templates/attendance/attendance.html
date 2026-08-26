@@ -2,7 +2,7 @@
     {% if not user.time_out %}
     <TR>
         <!-- <TD>{{ user.ida}}</TD> -->
-        <TD>{{ user.name}}</TD>
+        <TD>{% if user.name %}{{ user.name }}{% else %}{{ user.card_id }}{% endif %}</TD>
         <!-- <TD>{{ user.card_id}}</TD> -->
         <!-- <TD>{{ user.phone}}</TD> -->
     <TD>{{ user.date|date:"d.m.Y" }}</TD>
