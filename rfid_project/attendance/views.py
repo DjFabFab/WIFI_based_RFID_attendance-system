@@ -319,15 +319,29 @@ def get_alarm_display(payload: dict) -> dict:
                                 break
                     except Exception:
                         pass
-                    for sid, sdata in m1.items():
-                        if _monitor_color_map.get(str(sid)) not in _available_colors:
+                    monitor_users = data.get("monitor", {}).get("3", {})
+                    cluster_obj2 = data.get("cluster", {}).get("consumer", {})
+                    for uid, udata in monitor_users.items():
+                        if not isinstance(udata, dict):
                             continue
-                        if isinstance(sdata, dict):
-                            quals = sdata.get("qualification", {})
-                            if isinstance(quals, dict):
-                                for role, qids in role_map.items():
-                                    for qid in qids:
-                                        role_counts[role] += int(quals.get(str(qid), 0))
+                        sid = str(udata.get("status", ""))
+                        if _monitor_color_map.get(sid) not in _available_colors:
+                            continue
+                        uinfo = cluster_obj2.get(str(uid))
+                        if not isinstance(uinfo, dict):
+                            try:
+                                uinfo = cluster_obj2.get(int(str(uid)))
+                            except Exception:
+                                uinfo = None
+                        if not isinstance(uinfo, dict):
+                            continue
+                        quals = uinfo.get("qualifications") or []
+                        if not isinstance(quals, list):
+                            continue
+                        qset = {int(q) for q in quals if str(q).lstrip("-").isdigit()}
+                        for role, qids in role_map.items():
+                            if any(q in qset for q in qids):
+                                role_counts[role] += 1
         except Exception:
             pass
 
