@@ -293,62 +293,15 @@ def get_alarm_display(payload: dict) -> dict:
         status_counts = {}
         role_counts = {"AGT": 0, "MA": 0, "GF": 0}
         try:
-            candidate_status = None
-            for k in ("ucr_answered", "ucrAnswered", "responses", "participants", "attendees", "status_counts", "statusCounts"):
-                if k in selected and isinstance(selected[k], dict):
-                    candidate_status = selected[k]
-                    break
-            if candidate_status is None:
-                for dk in ("ucr_answered", "responses"):
-                    dv = data.get(dk)
-                    if isinstance(dv, dict) and dv:
-                        candidate_status = dv
-                        break
-
-            default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
-            role_map = dict(default_role_map)
-            try:
-                for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
-                          pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
-                    if p.exists():
-                        jm = json.loads(p.read_text(encoding="utf-8"))
-                        if isinstance(jm, dict):
-                            for rk in ("AGT", "MA", "GF"):
-                                if rk in jm and isinstance(jm[rk], list):
-                                    role_map[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
-                        break
-            except Exception:
-                pass
-
-            if isinstance(candidate_status, dict) and candidate_status:
-                for sid, users in candidate_status.items():
-                    try:
-                        if isinstance(users, dict):
-                            cnt = len(users)
-                        elif isinstance(users, list):
-                            cnt = len(users)
-                        elif isinstance(users, int):
-                            cnt = users
-                        else:
-                            cnt = 1
-                        if cnt > 0:
-                            status_counts[str(sid)] = cnt
-                    except Exception:
-                        continue
-        except Exception:
-            status_counts = {}
-
-        try:
             monitor = data.get("monitor")
             if isinstance(monitor, dict):
                 m1 = monitor.get("1")
                 if isinstance(m1, dict):
-                    if not status_counts:
-                        for sid, sdata in m1.items():
-                            if isinstance(sdata, dict):
-                                all_cnt = sdata.get("all", 0)
-                                if all_cnt:
-                                    status_counts[str(sid)] = all_cnt
+                    for sid, sdata in m1.items():
+                        if isinstance(sdata, dict):
+                            all_cnt = sdata.get("all", 0)
+                            if all_cnt:
+                                status_counts[str(sid)] = all_cnt
                     _available_colors = {"success", "primary", "info", "warning"}
                     _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
                     default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
