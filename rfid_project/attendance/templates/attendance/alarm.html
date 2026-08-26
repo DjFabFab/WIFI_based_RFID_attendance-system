@@ -78,7 +78,7 @@ html,body{height:100vh;overflow:hidden}
     <div class="alarm-row3">
       <div class="alarm-tile alarm-tile-green">
         <div class="alarm-tile-label">Status</div>
-        {% if active and status_display %}
+        {% if status_display %}
         <div class="alarm-roles">
           {% for s in status_display %}
           <div class="alarm-role">
@@ -93,7 +93,7 @@ html,body{height:100vh;overflow:hidden}
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Einsatzkräfte</div>
-        {% if active and role_names %}
+        {% if role_names %}
         <div class="alarm-roles">
           {% if role_names.AGT %}<div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members">{% for name in role_names.AGT %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>{% endif %}
           {% if role_names.MA %}<div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members">{% for name in role_names.MA %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>{% endif %}
@@ -106,7 +106,7 @@ html,body{height:100vh;overflow:hidden}
       </div>
     </div>
 
-    {% if active and crew_list %}
+    {% if crew_list %}
     <div class="alarm-people">
       {% for p in crew_list %}
       <div class="alarm-person"><span class="alarm-dot dot-{{ p.color }}"></span>{{ p.name }}</div>
