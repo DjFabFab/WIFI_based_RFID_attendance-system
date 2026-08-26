@@ -479,37 +479,6 @@ def present(request):
 def alarm(request):
     if request.method != "GET":
         return HttpResponse("Method Not Allowed", status=405)
-    # Demo mode for kiosk preview: ?demo=1 renders an active sample alarm without needing a real DIVERA key
-    if request.GET.get("demo") in ("1", "active"):
-        demo_payload = {
-            "success": True,
-            "data": {
-                "alarm": {
-                    "items": [
-                        {
-                            "id": 37342515,
-                            "closed": False,
-                            "title": "F F2 Gewerbe - Brand Lagerhalle",
-                            "address": "Gewerbegebiet Süd, Musterstr. 42",
-                            "priority": True,
-                            "duration": "2 Stunden, 1 Minuten",
-                            "date": "2026-08-26T20:00:00",
-                            "lat": 52.52,
-                            "lng": 13.40,
-                            "vehicle": [68687],
-                            "group": [110736],
-                        }
-                    ]
-                },
-                "vehicle": {"68687": {"name": "Hilfeleistungslöschgruppenfahrzeug 10"}},
-                "cluster": {"110736": {"name": "Zug 1"}},
-            },
-        }
-        ctx = get_alarm_display(demo_payload)
-        ctx["now"] = datetime.datetime.now()
-        resp = render(request, "attendance/alarm.html", ctx)
-        resp["Cache-Control"] = "no-store"
-        return resp
     access_key = (os.environ.get("DIVERA_ACCESS_KEY") or getattr(settings, "DIVERA_ACCESS_KEY", "") or "").strip()
     api_url = os.environ.get("DIVERA_API_URL", "https://app.divera247.com/api/v2/pull/all")
     if not access_key:
