@@ -9,7 +9,6 @@
   border-top: 2px solid var(--kiosk-border, #2b3340);
   padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
   transform: translateY(100%);
-  transition: transform 0.22s ease;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -44,7 +43,6 @@
 .vk-key:active {
   background: var(--kiosk-accent, #4d8dff);
   color: #04210f;
-  transform: scale(0.97);
 }
 .vk-key-wide {
   max-width: 96px;
