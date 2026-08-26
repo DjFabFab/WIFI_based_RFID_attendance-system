@@ -51,7 +51,7 @@ pn532_i2c:
         green: 100%
         blue: 0%
         flash_length: 500ms
-    - rtttl.play: "chirp:d=10,o=5,b=100:c"
+    - rtttl.play: "beep:d=8,o=6,b=100:b5"
     - lambda: |-
         id(uart_bus).write_str(x.c_str());
         id(uart_bus).write_str("\n");
