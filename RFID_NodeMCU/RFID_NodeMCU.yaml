@@ -30,9 +30,11 @@ uart:
   baud_rate: 115200
   tx_pin: GPIO1
 
-# Enable logging
+# Enable logging on UART1 so UART0 (GPIO1) stays free for UID streaming
 logger:
-  baud_rate: 0
+  baud_rate: 115200
+  hardware_uart: UART1
+  level: INFO
 
 i2c:
   scan: False
