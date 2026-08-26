@@ -30,6 +30,10 @@
         </div>
         <div class="col-md-6">
           <form action="/cardedit/" method="post"> {% csrf_token %}
+            {% if selected_user %}
+              <div class="alert alert-success py-1">Ausgewählt: {{ selected_user.name|default:selected_user.id }} (ID {{ selected_user.id }})</div>
+            {% endif %}
+            <input type="hidden" name="selected_card_id" id="selected_card_id" value="{% if selected_user %}{{ selected_user.id }}{% endif %}">
             <div class="form-group">
               <label for="name">Name</label>
               <input type="text" name="name" class="form-control" id="name" placeholder="Enter Name">
@@ -102,6 +106,7 @@
           $('#manage').html(data);
         });
   }, 10000);
+    $('#inlineFormInputName2').on('change', function(){ $('#selected_card_id').val($(this).val()); });
   });
 </script>
 {% endblock %}

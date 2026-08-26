@@ -377,7 +377,9 @@ def manage1(request):
 
 def manage(request):
 	users = Student.objects.order_by('-id')
-	return render(request, 'attendance/manage.html', {'users': users})
+	selected_id = request.session.get('selected_card_id')
+	selected_user = Student.objects.filter(id=selected_id).first() if selected_id else None
+	return render(request, 'attendance/manage.html', {'users': users, 'selected_user': selected_user})
 
 
 def card(request):
@@ -412,9 +414,14 @@ def card(request):
 
 
 def edit(request):
-	selected_id = request.session.get('selected_card_id')
-	if selected_id is None:
+	selected_id = request.POST.get('selected_card_id') or request.POST.get('idsearch') or request.session.get('selected_card_id')
+	if selected_id is None or str(selected_id).strip() == '':
 		messages.info(request, 'No Card was Selected')
+		return redirect('/manage')
+	try:
+		selected_id = int(selected_id)
+	except (ValueError, TypeError):
+		messages.info(request, 'Card not found')
 		return redirect('/manage')
 	user = Student.objects.filter(id=selected_id).first()
 	if user is None:
