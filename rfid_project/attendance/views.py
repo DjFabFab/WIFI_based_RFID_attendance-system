@@ -232,13 +232,24 @@ def get_alarm_display(payload: dict) -> dict:
             if isinstance(v, dict) and v:
                 vehicle_map = v
                 break
+        if not vehicle_map:
+            cluster_obj = data.get("cluster")
+            if isinstance(cluster_obj, dict):
+                v = cluster_obj.get("vehicle")
+                if isinstance(v, dict) and v:
+                    vehicle_map = v
         group_map = {}
-        for k in ("cluster", "clusters", "group", "groups", "ucr"):
-            g = data.get(k)
+        cluster_obj = data.get("cluster")
+        if isinstance(cluster_obj, dict):
+            g = cluster_obj.get("group")
             if isinstance(g, dict) and g:
-                if not group_map:
-                    group_map = {}
-                group_map.update(g)
+                group_map = g
+        if not group_map:
+            for k in ("groups",):
+                g = data.get(k)
+                if isinstance(g, dict) and g:
+                    group_map = g
+                    break
 
         def _resolve(ids, mapping):
             if not ids:
@@ -344,12 +355,17 @@ def get_alarm_display(payload: dict) -> dict:
                             responded_user_ids.add(str(uid))
             # if we have responded users, check their qualifications in cluster
             if responded_user_ids:
-                # cluster holds user details with qualifications
                 cluster_map = {}
-                for ck in ("cluster", "users", "user"):
-                    cm = data.get(ck)
-                    if isinstance(cm, dict) and cm:
-                        cluster_map.update(cm)
+                cluster_obj = data.get("cluster")
+                if isinstance(cluster_obj, dict):
+                    consumer = cluster_obj.get("consumer")
+                    if isinstance(consumer, dict):
+                        cluster_map = consumer
+                if not cluster_map:
+                    for ck in ("users", "user"):
+                        cm = data.get(ck)
+                        if isinstance(cm, dict) and cm:
+                            cluster_map.update(cm)
                 # lookup
                 for uid in responded_user_ids:
                     uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
@@ -409,65 +425,132 @@ def get_alarm_display(payload: dict) -> dict:
             except Exception:
                 pass
 
-            _cluster = {}
-            for ck in ("cluster", "users", "user"):
-                cm = data.get(ck)
-                if isinstance(cm, dict) and cm:
-                    _cluster.update(cm)
+            consumer_map = {}
+            cluster_obj = data.get("cluster")
+            if isinstance(cluster_obj, dict):
+                consumer = cluster_obj.get("consumer")
+                if isinstance(consumer, dict):
+                    consumer_map = consumer
 
             _user_status = {}
-            if isinstance(candidate_status, dict):
-                for sid, users in candidate_status.items():
-                    sid_str = str(sid)
-                    if isinstance(users, dict):
-                        for uid in users.keys():
-                            _user_status[str(uid)] = sid_str
-                    elif isinstance(users, list):
-                        for uid in users:
-                            _user_status[str(uid)] = sid_str
+            monitor = data.get("monitor")
+            if isinstance(monitor, dict):
+                monitor_users = monitor.get("3")
+                if isinstance(monitor_users, dict):
+                    for uid, udata in monitor_users.items():
+                        if isinstance(udata, dict):
+                            st = udata.get("status")
+                            if st is not None:
+                                _user_status[str(uid)] = str(st)
 
-            for uid in responded_user_ids:
+            for uid, uinfo in consumer_map.items():
+                if not isinstance(uinfo, dict):
+                    continue
                 uid_str = str(uid)
                 name = uid_str
-                uinfo = _cluster.get(uid_str)
-                if not isinstance(uinfo, dict):
-                    try:
-                        uinfo = _cluster.get(int(uid_str))
-                    except (ValueError, TypeError):
-                        pass
-                if isinstance(uinfo, dict):
-                    fn = uinfo.get("firstname") or ""
-                    ln = uinfo.get("lastname") or ""
-                    std = uinfo.get("stdformat_name") or ""
-                    if isinstance(std, str) and std.strip():
-                        name = std.strip()
-                    elif isinstance(fn, str) or isinstance(ln, str):
-                        parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
-                        name = " ".join(parts) if parts else uid_str
+                fn = uinfo.get("firstname") or ""
+                ln = uinfo.get("lastname") or ""
+                std = uinfo.get("stdformat_name") or ""
+                if isinstance(std, str) and std.strip():
+                    name = std.strip()
+                elif isinstance(fn, str) or isinstance(ln, str):
+                    parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
+                    name = " ".join(parts) if parts else uid_str
                 user_sid = _user_status.get(uid_str, "")
                 color = _color_map_for_names.get(user_sid, "secondary")
                 crew_list.append({"name": name, "color": color})
-                if color in ("success", "primary", "info"):
+
+            if active and responded_user_ids:
+                for uid in responded_user_ids:
+                    uid_str = str(uid)
+                    if any(c["name"] == uid_str or _resolve_name(consumer_map, uid_str) == c["name"] for c in crew_list):
+                        continue
+                    name = uid_str
+                    uinfo = consumer_map.get(uid_str)
+                    if not isinstance(uinfo, dict):
+                        try:
+                            uinfo = consumer_map.get(int(uid_str))
+                        except (ValueError, TypeError):
+                            pass
                     if isinstance(uinfo, dict):
-                        quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
-                        if isinstance(quals, list):
-                            qset = set()
-                            for q in quals:
-                                try:
-                                    qset.add(int(q))
-                                except Exception:
-                                    continue
-                            for role, qids in _role_map2.items():
-                                if any(q in qset for q in qids):
+                        fn = uinfo.get("firstname") or ""
+                        ln = uinfo.get("lastname") or ""
+                        std = uinfo.get("stdformat_name") or ""
+                        if isinstance(std, str) and std.strip():
+                            name = std.strip()
+                        elif isinstance(fn, str) or isinstance(ln, str):
+                            parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
+                            name = " ".join(parts) if parts else uid_str
+                    user_sid = _user_status.get(uid_str, "")
+                    color = _color_map_for_names.get(user_sid, "secondary")
+                    crew_list.append({"name": name, "color": color})
+
+            def _resolve_name(cmap, uid):
+                u = cmap.get(uid)
+                if not isinstance(u, dict):
+                    try:
+                        u = cmap.get(int(uid))
+                    except (ValueError, TypeError):
+                        return uid
+                if isinstance(u, dict):
+                    std = u.get("stdformat_name") or ""
+                    if isinstance(std, str) and std.strip():
+                        return std.strip()
+                    fn = u.get("firstname") or ""
+                    ln = u.get("lastname") or ""
+                    parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
+                    return " ".join(parts) if parts else uid
+                return uid
+
+            if active:
+                for uid in responded_user_ids:
+                    uid_str = str(uid)
+                    name = _resolve_name(consumer_map, uid_str)
+                    user_sid = _user_status.get(uid_str, "")
+                    color = _color_map_for_names.get(user_sid, "secondary")
+                    if color in ("success", "primary", "info"):
+                        uinfo = consumer_map.get(uid_str)
+                        if not isinstance(uinfo, dict):
+                            try:
+                                uinfo = consumer_map.get(int(uid_str))
+                            except (ValueError, TypeError):
+                                pass
+                        if isinstance(uinfo, dict):
+                            quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
+                            if isinstance(quals, list):
+                                qset = set()
+                                for q in quals:
+                                    try:
+                                        qset.add(int(q))
+                                    except Exception:
+                                        continue
+                                for role, qids in _role_map2.items():
+                                    if any(q in qset for q in qids):
+                                        if name not in role_names[role]:
+                                            role_names[role].append(name)
+            else:
+                for uid, uinfo in consumer_map.items():
+                    if not isinstance(uinfo, dict):
+                        continue
+                    name = _resolve_name(consumer_map, uid)
+                    quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
+                    if isinstance(quals, list):
+                        qset = set()
+                        for q in quals:
+                            try:
+                                qset.add(int(q))
+                            except Exception:
+                                continue
+                        for role, qids in _role_map2.items():
+                            if any(q in qset for q in qids):
+                                if name not in role_names[role]:
                                     role_names[role].append(name)
-            # sort: green -> blue -> info -> yellow -> rest
+
             _color_order = {"success": 0, "primary": 1, "info": 2, "warning": 3, "secondary": 4}
             crew_list.sort(key=lambda x: (_color_order.get(x["color"], 5), x["name"]))
         except Exception:
             crew_list = []
             role_names = {"AGT": [], "MA": [], "GF": []}
-
-        # map status IDs
 
         # map status IDs to display labels/colors for kiosk (green/blue/yellow)
         # default: known Divera statuses -> colors, fallback to hash
@@ -489,16 +572,19 @@ def get_alarm_display(payload: dict) -> dict:
             color_map = {"78645": "success", "78647": "warning", "78646": "primary"}
         for sid, cnt in status_counts.items():
             label = sid
-            # try to resolve name from ucr/cluster if available
             try:
-                # ucr map may have name
-                ucr_map = data.get("ucr") or data.get("cluster") or {}
-                if isinstance(ucr_map, dict):
-                    info = ucr_map.get(sid) or ucr_map.get(str(sid))
-                    if isinstance(info, dict):
-                        label = info.get("name") or info.get("title") or info.get("label") or sid
-                    elif isinstance(info, str):
-                        label = info
+                status_name_map = {}
+                ucr_raw = data.get("ucr")
+                if isinstance(ucr_raw, dict):
+                    for ucr_uid, ucr_info in ucr_raw.items():
+                        if isinstance(ucr_info, dict):
+                            mapped_sid = ucr_info.get("status_id")
+                            ucr_name = ucr_info.get("name") or ""
+                            if mapped_sid is not None and ucr_name:
+                                status_name_map[str(mapped_sid)] = ucr_name
+                resolved = status_name_map.get(str(sid))
+                if resolved:
+                    label = resolved
             except Exception:
                 pass
             # color: green/blue/yellow requested -> map to bootstrap: success/primary/warning
