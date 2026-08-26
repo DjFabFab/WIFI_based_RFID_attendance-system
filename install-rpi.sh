@@ -24,7 +24,7 @@ python3 manage.py migrate
 # python3 manage.py changepassword root
 
 
-# Create new systemd service file
+# Create new systemd service file — loads DIVERA key so GET /alarm/ can render live alarm data
 cat << EOF | sudo tee /etc/systemd/system/rfid-server.service
 [Unit]
 Description=Run RFID Server
@@ -32,6 +32,7 @@ After=network.target
 
 [Service]
 Type=simple
+EnvironmentFile=/home/pi/WIFI_based_RFID_attendance-system/rfid_project/deployment/divera_kiosk.env
 ExecStart=/home/pi/WIFI_based_RFID_attendance-system/rfid_project/bin/python3 manage.py runserver 0.0.0.0:8000
 WorkingDirectory=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
 User=pi
