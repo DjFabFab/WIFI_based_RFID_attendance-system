@@ -290,48 +290,24 @@ def get_alarm_display(payload: dict) -> dict:
         vehicle_names = _resolve(vehicle_ids, vehicle_map)
         group_names = _resolve(group_ids, group_map)
 
-        # --- Personnel status: counts per Divera status (only ucr_answered / alarm state) ---
-        # and role breakdown AGT/MA/GF. Only count statuses that were changed after alarm.
         status_counts = {}
         role_counts = {"AGT": 0, "MA": 0, "GF": 0}
         try:
-            # 1. status counts: prefer selected alarm's ucr_answered / participants if present
             candidate_status = None
             for k in ("ucr_answered", "ucrAnswered", "responses", "participants", "attendees", "status_counts", "statusCounts"):
                 if k in selected and isinstance(selected[k], dict):
                     candidate_status = selected[k]
                     break
-            # fallback: data-level monitor filtered to alarm-relevant statuses
             if candidate_status is None:
-                # check data-level keys that may hold per-alarm status
                 for dk in ("ucr_answered", "responses"):
                     dv = data.get(dk)
                     if isinstance(dv, dict) and dv:
                         candidate_status = dv
                         break
-            if isinstance(candidate_status, dict) and candidate_status:
-                for sid, users in candidate_status.items():
-                    try:
-                        # users may be dict of user->status or list
-                        if isinstance(users, dict):
-                            cnt = len(users)
-                        elif isinstance(users, list):
-                            cnt = len(users)
-                        elif isinstance(users, int):
-                            cnt = users
-                        else:
-                            cnt = 1
-                        # only include if count >0 (changed after alarm)
-                        if cnt > 0:
-                            status_counts[str(sid)] = cnt
-                    except Exception:
-                        continue
-            # 2. role counts: check qualifications in data.cluster / data.user
-            # load configurable mapping for AGT/MA/GF qualification IDs
+
             default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
             role_map = dict(default_role_map)
             try:
-                # try deployment/alarm_roles.json relative to project
                 for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
                           pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
                     if p.exists():
@@ -343,9 +319,24 @@ def get_alarm_display(payload: dict) -> dict:
                         break
             except Exception:
                 pass
-            # collect users who responded (flatten candidate_status)
-            responded_user_ids = set()
-            if isinstance(candidate_status, dict):
+
+            if isinstance(candidate_status, dict) and candidate_status:
+                for sid, users in candidate_status.items():
+                    try:
+                        if isinstance(users, dict):
+                            cnt = len(users)
+                        elif isinstance(users, list):
+                            cnt = len(users)
+                        elif isinstance(users, int):
+                            cnt = users
+                        else:
+                            cnt = 1
+                        if cnt > 0:
+                            status_counts[str(sid)] = cnt
+                    except Exception:
+                        continue
+
+                responded_user_ids = set()
                 for users in candidate_status.values():
                     if isinstance(users, dict):
                         for uid in users.keys():
@@ -353,45 +344,59 @@ def get_alarm_display(payload: dict) -> dict:
                     elif isinstance(users, list):
                         for uid in users:
                             responded_user_ids.add(str(uid))
-            # if we have responded users, check their qualifications in cluster
-            if responded_user_ids:
-                cluster_map = {}
-                cluster_obj = data.get("cluster")
-                if isinstance(cluster_obj, dict):
-                    consumer = cluster_obj.get("consumer")
-                    if isinstance(consumer, dict):
-                        cluster_map = consumer
-                if not cluster_map:
-                    for ck in ("users", "user"):
-                        cm = data.get(ck)
-                        if isinstance(cm, dict) and cm:
-                            cluster_map.update(cm)
-                for uid in responded_user_ids:
-                    uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
-                    if not isinstance(uinfo, dict):
-                        uinfo = cluster_map.get(str(uid))
-                    if not isinstance(uinfo, dict):
-                        continue
-                    _user_sid = _user_status.get(str(uid), "")
-                    _user_color = _color_map_for_names.get(_user_sid, "secondary")
-                    if _user_color not in ("success", "primary", "info", "warning"):
-                        continue
-                    quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
-                    if not isinstance(quals, list):
-                        continue
-                    qset = set()
-                    for q in quals:
-                        try:
-                            qset.add(int(q))
-                        except Exception:
+
+                if responded_user_ids:
+                    cluster_map = {}
+                    cluster_obj = data.get("cluster")
+                    if isinstance(cluster_obj, dict):
+                        consumer = cluster_obj.get("consumer")
+                        if isinstance(consumer, dict):
+                            cluster_map = consumer
+                    for uid in responded_user_ids:
+                        uinfo = cluster_map.get(uid) or cluster_map.get(int(uid)) if uid.isdigit() else None
+                        if not isinstance(uinfo, dict):
+                            uinfo = cluster_map.get(str(uid))
+                        if not isinstance(uinfo, dict):
                             continue
-                    for role, qids in role_map.items():
-                        if any(q in qset for q in qids):
-                            role_counts[role] += 1
-            else:
-                # no responded users -> try to infer from monitor qualification totals, but only if active
-                # keep role_counts as 0 to avoid misleading
-                pass
+                        _user_sid = _user_status.get(str(uid), "")
+                        _user_color = _color_map_for_names.get(_user_sid, "secondary")
+                        if _user_color not in ("success", "primary", "info", "warning"):
+                            continue
+                        quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
+                        if not isinstance(quals, list):
+                            continue
+                        qset = set()
+                        for q in quals:
+                            try:
+                                qset.add(int(q))
+                            except Exception:
+                                continue
+                        for role, qids in role_map.items():
+                            if any(q in qset for q in qids):
+                                role_counts[role] += 1
+
+            if not status_counts or not any(v > 0 for v in role_counts.values()):
+                monitor = data.get("monitor")
+                if isinstance(monitor, dict):
+                    m1 = monitor.get("1")
+                    if isinstance(m1, dict):
+                        if not status_counts:
+                            for sid, sdata in m1.items():
+                                if isinstance(sdata, dict):
+                                    all_cnt = sdata.get("all", 0)
+                                    if all_cnt:
+                                        status_counts[str(sid)] = all_cnt
+                        if not any(v > 0 for v in role_counts.values()):
+                            _available_colors = {"success", "primary", "info", "warning"}
+                            for sid, sdata in m1.items():
+                                if color_map.get(str(sid)) not in _available_colors:
+                                    continue
+                                if isinstance(sdata, dict):
+                                    quals = sdata.get("qualification", {})
+                                    if isinstance(quals, dict):
+                                        for role, qids in role_map.items():
+                                            for qid in qids:
+                                                role_counts[role] += int(quals.get(str(qid), 0))
         except Exception:
             status_counts = {}
             role_counts = {"AGT": 0, "MA": 0, "GF": 0}
