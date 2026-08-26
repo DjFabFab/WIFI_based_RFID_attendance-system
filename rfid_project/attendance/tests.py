@@ -343,7 +343,7 @@ class AlarmViewTests(TestCase):
             with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
                 resp = self.client.get("/alarm/")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+        self.assertIn("Keine Einsatzkräfte", resp.content.decode())
         self.assertEqual(resp["Cache-Control"], "no-store")
 
     def test_alarm_empty_items_shows_idle(self):
@@ -352,7 +352,7 @@ class AlarmViewTests(TestCase):
             with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
                 resp = self.client.get("/alarm/")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+        self.assertIn("Keine Einsatzkräfte", resp.content.decode())
 
     def test_alarm_items_as_dict(self):
         payload = {
@@ -380,7 +380,7 @@ class AlarmViewTests(TestCase):
             with patch("attendance.views.requests.get", return_value=self._mock_success(payload)):
                 resp = self.client.get("/alarm/")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("Kein aktiver Alarm", resp.content.decode())
+        self.assertIn("Keine Einsatzkräfte", resp.content.decode())
         self.assertNotIn("Daten nicht verf", resp.content.decode())
 
     def test_alarm_api_error_shows_banner(self):
@@ -392,7 +392,7 @@ class AlarmViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode()
         self.assertIn("Daten nicht verf", content)
-        self.assertIn("Kein aktiver Alarm", content)
+        self.assertIn("Keine Einsatzkräfte", content)
         self.assertEqual(resp["Cache-Control"], "no-store")
 
     def test_alarm_network_error_shows_banner(self):
@@ -404,7 +404,7 @@ class AlarmViewTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         content = resp.content.decode()
         self.assertIn("Daten nicht verf", content)
-        self.assertIn("Kein aktiver Alarm", content)
+        self.assertIn("Keine Einsatzkräfte", content)
         self.assertEqual(resp["Cache-Control"], "no-store")
 
     def test_alarm_address_fallback_uses_map_link(self):

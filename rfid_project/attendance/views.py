@@ -51,6 +51,8 @@ def get_alarm_display(payload: dict) -> dict:
         "status_counts": {},
         "status_display": [],
         "role_counts": {"AGT": 0, "MA": 0, "GF": 0},
+        "crew_list": [],
+        "role_names": {"AGT": [], "MA": [], "GF": []},
     }
     try:
         if not isinstance(payload, dict):
@@ -376,6 +378,97 @@ def get_alarm_display(payload: dict) -> dict:
             status_counts = {}
             role_counts = {"AGT": 0, "MA": 0, "GF": 0}
 
+        crew_list = []
+        role_names = {"AGT": [], "MA": [], "GF": []}
+        try:
+            _color_map_for_names = {}
+            try:
+                default_color_map2 = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+                for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_status.json",
+                          pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_status.json"]:
+                    if p.exists():
+                        jm = json.loads(p.read_text(encoding="utf-8"))
+                        if isinstance(jm, dict):
+                            default_color_map2.update({str(k): str(v) for k, v in jm.items()})
+                        break
+                _color_map_for_names = default_color_map2
+            except Exception:
+                _color_map_for_names = {"78645": "success", "78647": "warning", "78646": "primary", "78650": "info"}
+
+            _role_map2 = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
+            try:
+                for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
+                          pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
+                    if p.exists():
+                        jm = json.loads(p.read_text(encoding="utf-8"))
+                        if isinstance(jm, dict):
+                            for rk in ("AGT", "MA", "GF"):
+                                if rk in jm and isinstance(jm[rk], list):
+                                    _role_map2[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
+                        break
+            except Exception:
+                pass
+
+            _cluster = {}
+            for ck in ("cluster", "users", "user"):
+                cm = data.get(ck)
+                if isinstance(cm, dict) and cm:
+                    _cluster.update(cm)
+
+            _user_status = {}
+            if isinstance(candidate_status, dict):
+                for sid, users in candidate_status.items():
+                    sid_str = str(sid)
+                    if isinstance(users, dict):
+                        for uid in users.keys():
+                            _user_status[str(uid)] = sid_str
+                    elif isinstance(users, list):
+                        for uid in users:
+                            _user_status[str(uid)] = sid_str
+
+            for uid in responded_user_ids:
+                uid_str = str(uid)
+                name = uid_str
+                uinfo = _cluster.get(uid_str)
+                if not isinstance(uinfo, dict):
+                    try:
+                        uinfo = _cluster.get(int(uid_str))
+                    except (ValueError, TypeError):
+                        pass
+                if isinstance(uinfo, dict):
+                    fn = uinfo.get("firstname") or ""
+                    ln = uinfo.get("lastname") or ""
+                    std = uinfo.get("stdformat_name") or ""
+                    if isinstance(std, str) and std.strip():
+                        name = std.strip()
+                    elif isinstance(fn, str) or isinstance(ln, str):
+                        parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
+                        name = " ".join(parts) if parts else uid_str
+                user_sid = _user_status.get(uid_str, "")
+                color = _color_map_for_names.get(user_sid, "secondary")
+                crew_list.append({"name": name, "color": color})
+                if color in ("success", "primary", "info"):
+                    if isinstance(uinfo, dict):
+                        quals = uinfo.get("qualifications") or uinfo.get("quals") or uinfo.get("roles") or []
+                        if isinstance(quals, list):
+                            qset = set()
+                            for q in quals:
+                                try:
+                                    qset.add(int(q))
+                                except Exception:
+                                    continue
+                            for role, qids in _role_map2.items():
+                                if any(q in qset for q in qids):
+                                    role_names[role].append(name)
+            # sort: green -> blue -> info -> yellow -> rest
+            _color_order = {"success": 0, "primary": 1, "info": 2, "warning": 3, "secondary": 4}
+            crew_list.sort(key=lambda x: (_color_order.get(x["color"], 5), x["name"]))
+        except Exception:
+            crew_list = []
+            role_names = {"AGT": [], "MA": [], "GF": []}
+
+        # map status IDs
+
         # map status IDs to display labels/colors for kiosk (green/blue/yellow)
         # default: known Divera statuses -> colors, fallback to hash
         status_display = []
@@ -438,6 +531,8 @@ def get_alarm_display(payload: dict) -> dict:
             "status_counts": status_counts,
             "status_display": status_display,
             "role_counts": role_counts,
+            "crew_list": crew_list,
+            "role_names": role_names,
         }
     except Exception:
         return dict(idle)
