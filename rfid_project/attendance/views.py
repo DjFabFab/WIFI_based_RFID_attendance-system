@@ -532,6 +532,15 @@ def get_alarm_display(payload: dict) -> dict:
             if str(sid) == "0":
                 continue
             label = sid
+            def _short_label(name):
+                _map = {
+                    "innerhalb 10 Minuten": "≤10min",
+                    "über 10 Minuten": ">10min",
+                    "Nicht einsatzbereit": "N.einsatzb.",
+                    "Gerätehaus": "Gerät.haus",
+                    "Keine Alarmierung": "Kein Alarm",
+                }
+                return _map.get(name, name)
             try:
                 status_name_map = {}
                 cluster_status = {}
@@ -567,7 +576,7 @@ def get_alarm_display(payload: dict) -> dict:
                     color = ["success", "primary", "warning"][h]
                 except Exception:
                     color = "secondary"
-            status_display.append({"id": sid, "label": str(label), "count": cnt, "color": color})
+            status_display.append({"id": sid, "label": str(label), "short": _short_label(str(label)), "count": cnt, "color": color})
 
         return {
             "active": active,
