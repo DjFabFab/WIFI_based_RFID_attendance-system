@@ -1,34 +1,34 @@
 {% extends 'attendance/basic.html' %}
-
-{% block title %}Anwesend{% endblock %}
-
+{% block title %}Anwesend — Presency{% endblock %}
 {% block body %}
-
-<div class="container-fluid text-center">
-  <br>
-  <div id="clock-header" class="kiosk-clock" aria-live="off">
-    <div id="clock-time" class="clock-time"></div>
+<div class="kiosk-page">
+  <div id="clock-header" class="kiosk-clock-hero" aria-live="off" aria-label="Aktuelle Uhrzeit">
+    <div id="clock-time" class="clock-time">--:--:--</div>
     <div id="clock-date" class="clock-date"></div>
   </div>
-  <br>
-  <div id="empty-state" class="kiosk-empty" hidden>
-    <p>Niemand anwesend</p>
+
+  <div id="empty-state" class="kiosk-empty-state" hidden>
+    <div class="empty-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <p class="empty-title">Niemand anwesend</p>
+    <p class="empty-hint">Bitte Token vorhalten</p>
   </div>
-  <table class="table" id="cards-table">
-    <thead class="thead-light">
-      <TR>
-        <!-- <TH>ID.No</TH> -->
-        <TH>Name</TH>
-        <!-- <TH>RFID</TH> -->
-        <!-- <TH>Phone Number</TH> -->
-        <TH>Datum</TH>
-        <TH class="text-center" title="Löschen">Löschen</TH>
-        <!-- <TH>Zeit Out</TH> -->
-      </TR>
-    </thead>
-    <tbody id="cards" class="cards">
-    </tbody>
-  </table>
+
+  <div class="kiosk-table-wrap" id="cards-wrap" hidden>
+    <div class="kiosk-table-scroll">
+      <table class="table" id="cards-table" aria-label="Anwesenheitsliste">
+        <thead>
+          <tr>
+            <th class="col-name">Name</th>
+            <th class="col-date">Datum</th>
+            <th class="col-delete" title="Löschen">Löschen</th>
+          </tr>
+        </thead>
+        <tbody id="cards" class="cards"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
 {% block js %}
@@ -37,46 +37,32 @@
     var PRESENT_URL = "{% url 'present' %}";
     var PROCESS_URL = "{% url 'process' %}";
 
-    // Live clock + German date header, updated every second
     function updateClock() {
       var now = new Date();
       $('#clock-time').text(now.toLocaleTimeString('de-DE', { hour12: false }));
-      $('#clock-date').text(now.toLocaleDateString('de-DE', {
-        weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric'
-      }));
+      $('#clock-date').text(now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }));
     }
     updateClock();
     setInterval(updateClock, 1000);
 
-    // JSON polling of the present list every 10 seconds
     function loadPresent() {
-      $.ajax({
-        url: PRESENT_URL,
-        dataType: 'json'
-      }).done(function (data) {
+      $.ajax({ url: PRESENT_URL, dataType: 'json' }).done(function (data) {
         var rows = data || [];
         var $cards = $('#cards').empty();
         if (!rows.length) {
           $('#empty-state').prop('hidden', false);
-          $('#cards-table').prop('hidden', true);
+          $('#cards-wrap').prop('hidden', true);
           return;
         }
         $('#empty-state').prop('hidden', true);
-        $('#cards-table').prop('hidden', false);
+        $('#cards-wrap').prop('hidden', false);
         $.each(rows, function (i, entry) {
           var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
           var $tr = $('<tr>');
-          $('<td>').text(name).appendTo($tr);
-          $('<td>').text(entry.date).appendTo($tr);
-          var $td = $('<td class="text-center">');
-          $('<button>')
-            .attr('type', 'button')
-            .attr('title', 'Löschen')
-            .attr('aria-label', 'Löschen')
-            .addClass('btn btn-sm btn-danger delete-btn')
-            .data('card', entry.card_id)
-            .append(trashSvg())
-            .appendTo($td);
+          $('<td class="col-name">').text(name).appendTo($tr);
+          $('<td class="col-date">').text(entry.date).appendTo($tr);
+          var $td = $('<td class="col-delete">');
+          $('<button>').attr('type','button').attr('title','Löschen').attr('aria-label','Löschen: ' + name).addClass('btn btn-sm delete-btn').data('card', entry.card_id).append(trashSvg()).appendTo($td);
           $td.appendTo($tr);
           $tr.appendTo($cards);
         });
@@ -88,91 +74,52 @@
     function trashSvg() {
       var ns = 'http://www.w3.org/2000/svg';
       var svg = document.createElementNS(ns, 'svg');
-      svg.setAttribute('width', '24');
-      svg.setAttribute('height', '24');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '2');
-      svg.setAttribute('stroke-linecap', 'round');
-      svg.setAttribute('stroke-linejoin', 'round');
-      svg.setAttribute('aria-hidden', 'true');
-      var polyline = document.createElementNS(ns, 'polyline');
-      polyline.setAttribute('points', '3 6 5 6 21 6');
-      var path1 = document.createElementNS(ns, 'path');
-      path1.setAttribute('d', 'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6');
-      var path2 = document.createElementNS(ns, 'path');
-      path2.setAttribute('d', 'M10 11v6');
-      var path3 = document.createElementNS(ns, 'path');
-      path3.setAttribute('d', 'M14 11v6');
-      var path4 = document.createElementNS(ns, 'path');
-      path4.setAttribute('d', 'M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2');
-      svg.appendChild(polyline);
-      svg.appendChild(path1);
-      svg.appendChild(path2);
-      svg.appendChild(path3);
-      svg.appendChild(path4);
+      svg.setAttribute('viewBox','0 0 24 24'); svg.setAttribute('fill','none'); svg.setAttribute('stroke','currentColor');
+      svg.setAttribute('stroke-width','2.15'); svg.setAttribute('stroke-linecap','round'); svg.setAttribute('stroke-linejoin','round'); svg.setAttribute('aria-hidden','true');
+      var els = [
+        ['polyline','3 6 5 6 21 6'],
+        ['path',null,'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'],
+        ['path',null,'M10 11v6'], ['path',null,'M14 11v6'],
+        ['path',null,'M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2']
+      ];
+      els.forEach(function(e){
+        var el = document.createElementNS(ns, e[0]);
+        if(e[1]) el.setAttribute('points', e[1]);
+        if(e[2]) el.setAttribute('d', e[2]);
+        svg.appendChild(el);
+      });
       return svg;
     }
 
-    function deleteEntry(cardId, btn) {
-      $.ajax({
-        url: PROCESS_URL,
-        data: { card_id: cardId, delete: 1 },
-        method: 'GET'
-      }).done(function (resp) {
-        $(btn).closest('tr').remove();
-        loadPresent();
-      }).fail(function () {
-        alert('Löschen fehlgeschlagen');
-      });
+    function deleteEntry(cardId) {
+      $.ajax({ url: PROCESS_URL, data: { card_id: cardId, delete: 1 }, method: 'GET' })
+        .done(function(){ loadPresent(); })
+        .fail(function(){ alert('Löschen fehlgeschlagen'); });
     }
 
-    // Two-tap delete: first tap arms the button ("Sicher?"), second tap within
-    // 3s confirms; tapping elsewhere or waiting 3s disarms.
     var ARM_TIMEOUT_MS = 3000;
     var armTimers = {};
-
-    function disarm(btn) {
-      var $btn = $(btn);
-      $btn.removeClass('armed').html(trashSvg()).attr('aria-label', 'Löschen').attr('title', 'Löschen');
-      if (armTimers[$btn.data('card')]) {
-        clearTimeout(armTimers[$btn.data('card')]);
-        delete armTimers[$btn.data('card')];
-      }
+    function disarm(btn){
+      var $btn=$(btn);
+      $btn.removeClass('armed').html(trashSvg()).attr('aria-label','Löschen').attr('title','Löschen');
+      if(armTimers[$btn.data('card')]){ clearTimeout(armTimers[$btn.data('card')]); delete armTimers[$btn.data('card')]; }
     }
-
-    function arm(btn) {
-      var $btn = $(btn);
-      var cardId = $btn.data('card');
+    function arm(btn){
+      var $btn=$(btn); var cardId=$btn.data('card');
       disarm(btn);
-      $btn.addClass('armed').text('Sicher?').attr('aria-label', 'Sicher löschen?').attr('title', 'Erneut tippen zum Löschen');
-      armTimers[cardId] = setTimeout(function () {
-        disarm(btn);
-        delete armTimers[cardId];
-      }, ARM_TIMEOUT_MS);
+      $btn.addClass('armed').text('Sicher?').attr('aria-label','Sicher löschen?').attr('title','Erneut tippen zum Löschen');
+      armTimers[cardId]=setTimeout(function(){ disarm(btn); delete armTimers[cardId]; }, ARM_TIMEOUT_MS);
     }
-
-    // Cancel arming when tapping anywhere else
-    $(document).on('pointerdown touchstart', function (e) {
-      var $btn = $(e.target).closest('.delete-btn');
-      if (!$btn.length) {
-        $('.delete-btn.armed').each(function () { disarm(this); });
-      }
+    $(document).on('pointerdown touchstart', function(e){
+      var $btn=$(e.target).closest('.delete-btn');
+      if(!$btn.length){ $('.delete-btn.armed').each(function(){ disarm(this); }); }
     });
-
-    // Delegated handler for delete buttons inside the dynamically loaded table
-    $(document).on('click', '.delete-btn', function (e) {
+    $(document).on('click', '.delete-btn', function(e){
       e.stopPropagation();
-      var $btn = $(this);
-      if ($btn.hasClass('armed')) {
-        var cardId = $btn.data('card');
-        disarm(this);
-        deleteEntry(cardId, this);
-      } else {
-        arm(this);
-      }
+      var $btn=$(this);
+      if($btn.hasClass('armed')){ var cardId=$btn.data('card'); disarm(this); deleteEntry(cardId); }
+      else arm(this);
     });
   });
-  </script>
+</script>
 {% endblock %}

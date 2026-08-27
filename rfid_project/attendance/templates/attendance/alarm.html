@@ -1,138 +1,160 @@
 {% extends 'attendance/basic.html' %}
-{% block title %}Alarm{% endblock %}
-{% block extra_head %}<meta http-equiv="refresh" content="15"><style>
-html,body{height:100vh;overflow:hidden}
+{% block title %}Alarm — Presency{% endblock %}
+{% block extra_head %}
+<style>
+html,body{height:100vh;overflow:hidden;background:#0e1116}
 .vk-container{display:none !important}
 nav.navbar{display:none !important}
-.alarm-nav{display:flex;align-items:center;justify-content:space-between;padding:.15rem .5rem;font-size:.65rem;background:#181d26;border-bottom:1px solid #2b3340;line-height:1}
-.alarm-nav a{color:#b6bfd0;text-decoration:none;font-weight:600}
+/* mini top bar — only back link + brand, 28px */
+.alarm-nav{display:flex;align-items:center;justify-content:space-between;padding:0 .7rem;height:28px;font-size:.72rem;font-weight:650;letter-spacing:.03em;background:rgba(24,29,38,.96);border-bottom:1px solid #2b3446;color:#8a94a8}
+.alarm-nav a{color:#b6bfd0;text-decoration:none;font-weight:650}
 .alarm-nav a:hover{color:#eef2f8}
-.alarm-fit{height:calc(100vh - 22px);display:flex;flex-direction:column;overflow:hidden;padding:.35rem .5rem;box-sizing:border-box}
-.alarm-grid{display:flex;flex-direction:column;gap:.35rem;flex:1;min-height:0}
-.alarm-hero{display:grid;grid-template-columns:2fr 1fr 1.5fr;gap:.35rem}
-.alarm-row2{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
-.alarm-row3{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
-.alarm-tile{border-radius:.4rem;padding:.35rem .6rem;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
-.alarm-tile-hero{border:2px solid #dc3545;background:rgba(220,53,69,.08)}
-.alarm-tile-prio{border:2px solid #dc3545;background:rgba(220,53,69,.08)}
-.alarm-tile-blue{border:2px solid #17a2b8;background:rgba(23,162,184,.08)}
-.alarm-tile-green{border:2px solid #28a745;background:rgba(40,167,69,.08)}
-.alarm-tile-yellow{border:2px solid #ffc107;background:rgba(255,193,7,.08)}
-.alarm-tile-stand{border:2px solid #6c757d;background:rgba(108,117,125,.08)}
-.alarm-tile-label{font-size:.65rem;font-weight:600;opacity:.85;margin-bottom:.15rem;letter-spacing:.02em}
-.alarm-tile-value{font-size:1rem;font-weight:700;line-height:1.1}
-.alarm-tile-hero .alarm-tile-value{font-size:1.3rem}
-.alarm-roles{display:flex;gap:.5rem;flex-wrap:wrap}
-.alarm-role{display:flex;flex-direction:column;align-items:center}
-.alarm-role-name{font-size:.75rem;font-weight:700;white-space:nowrap}
-.alarm-role-members{font-size:.9rem;font-weight:700;opacity:.95;line-height:1.1}
-.alarm-people{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:.2rem .5rem;align-content:start;overflow:hidden}
-.alarm-person{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:.15rem .4rem;border-radius:.25rem;border-left:3px solid transparent;gap:.3rem;line-height:1.2}
-.alarm-person.dot-success{border-left-color:#28a745}
-.alarm-person.dot-primary{border-left-color:#17a2b8}
-.alarm-person.dot-info{border-left-color:#17a2b8}
-.alarm-person.dot-warning{border-left-color:#ffc107}
-.alarm-person.dot-danger{border-left-color:#dc3545}
+.alarm-shell{height:calc(100vh - 28px);display:flex;flex-direction:column;overflow:hidden;padding:8px 8px 6px;box-sizing:border-box;gap:6px;background:radial-gradient(900px 500px at 50% -15%, #1c2535 0%, #0e1116 58%)}
+/* grid */
+.alarm-grid{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
+.alarm-row{display:grid;gap:6px}
+.alarm-hero{grid-template-columns:1.9fr .9fr 1.2fr}
+.alarm-row2{grid-template-columns:1fr 1fr}
+.alarm-row3{grid-template-columns:1fr 1fr}
+/* tile base premium */
+.alarm-tile{border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:#181d26;border:1px solid #2b3446;box-shadow:0 2px 8px rgba(0,0,0,.22);position:relative;min-height:0}
+.alarm-tile-label{font-size:.64rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:#8a94a8;margin-bottom:2px;line-height:1}
+.alarm-tile-value{font-size:.92rem;font-weight:700;line-height:1.15;color:#eef2f8;letter-spacing:-.01em}
+.alarm-tile-hero{border-color:rgba(255,77,77,.35);background:linear-gradient(180deg, rgba(255,77,77,.10) 0%, rgba(255,77,77,.03) 100%), #181d26;box-shadow:0 2px 12px rgba(255,77,77,.14)}
+.alarm-tile-hero .alarm-tile-label{color:#ff9a9a}
+.alarm-tile-hero .alarm-tile-value{font-size:1.15rem;letter-spacing:-.02em}
+.alarm-tile-hero.active-dot::after{content:"";position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 4px rgba(255,77,77,.18);animation:alarmBlink 1.6s ease-in-out infinite}
+@keyframes alarmBlink{0%,100%{opacity:1}50%{opacity:.45}}
+.alarm-tile-prio{border-color:rgba(255,77,77,.35);background:linear-gradient(180deg, rgba(255,77,77,.08) 0%, rgba(255,77,77,.02) 100%), #181d26}
+.alarm-tile-prio .alarm-tile-value{color:#ffb4b4}
+.alarm-tile-stand{border-color:#2b3446;background:linear-gradient(180deg, rgba(255,255,255,.03) 0%, rgba(255,255,255,0) 100%), #181d26}
+.alarm-tile-stand .alarm-tile-value{font-variant-numeric:tabular-nums;font-size:.88rem;color:#b6bfd0}
+.alarm-tile-blue{border-color:rgba(77,141,255,.22);background:linear-gradient(180deg, rgba(77,141,255,.07) 0%, rgba(77,141,255,.02) 100%), #181d26}
+.alarm-tile-green{border-color:rgba(61,220,132,.22);background:linear-gradient(180deg, rgba(61,220,132,.07) 0%, rgba(61,220,132,.02) 100%), #181d26}
+.alarm-tile-yellow{border-color:rgba(255,193,77,.26);background:linear-gradient(180deg, rgba(255,193,77,.08) 0%, rgba(255,193,77,.02) 100%), #181d26}
+.alarm-idle{border-color:#2b3446;background:#181d26;display:flex;align-items:center;justify-content:center;text-align:center}
+.alarm-idle .alarm-tile-value{color:#5a6579;font-size:1.4rem}
+.alarm-idle .alarm-tile-label{color:#5a6579}
+/* roles inside status tiles */
+.alarm-roles{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.alarm-role{display:flex;flex-direction:column;align-items:center;gap:1px}
+.alarm-role-name{font-size:.70rem;font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.alarm-role-members{font-size:.95rem;font-weight:800;line-height:1;color:#eef2f8;font-variant-numeric:tabular-nums}
+/* crew list */
+.alarm-crew-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+.alarm-people{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:3px 6px;align-content:start;overflow:hidden;padding:1px 0}
+.alarm-person{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.03);border-left:3px solid transparent;gap:4px;line-height:1.15;color:#d6deea}
+.alarm-person.dot-success{border-left-color:#3ddc84}
+.alarm-person.dot-primary,.alarm-person.dot-info{border-left-color:#4d8dff}
+.alarm-person.dot-warning{border-left-color:#ffc14d}
+.alarm-person.dot-danger{border-left-color:#ff5a5a}
 .alarm-person.dot-dark{border-left-color:#8b0000}
-.alarm-person.dot-secondary{border-left-color:#6c757d}
-.alarm-person-since{font-size:.65rem;opacity:.55;text-align:left;min-width:1.8rem;flex-shrink:0}
-.alarm-idle-tile{border:2px solid #6c757d;background:rgba(108,117,125,.08);text-align:center;justify-content:center;align-items:center}
-.alarm-idle-tile .alarm-tile-value{font-size:1.4rem;color:#6c757d}
-.alarm-idle-tile .alarm-tile-label{font-size:.7rem}
-</style>{% endblock %}
+.alarm-person.dot-secondary{border-left-color:#5a6579}
+.alarm-person-since{font-size:.62rem;opacity:.5;text-align:left;min-width:1.7rem;flex-shrink:0;font-variant-numeric:tabular-nums}
+.alarm-error{padding:5px 8px;border-radius:8px;background:rgba(255,193,77,.10);border:1px solid rgba(255,193,77,.22);color:#ffc14d;font-size:.78rem;font-weight:600;text-align:center}
+@media (min-width:1024px){
+  .alarm-shell{padding:10px 12px 8px;gap:8px}
+  .alarm-tile{padding:9px 12px}
+  .alarm-tile-value{font-size:1rem}
+  .alarm-tile-hero .alarm-tile-value{font-size:1.25rem}
+  .alarm-person{font-size:.78rem;padding:4px 7px}
+}
+/* 800×480 exact — ensure no overflow */
+@media (max-height: 490px){
+  .alarm-tile{padding:6px 9px}
+  .alarm-tile-value{font-size:.88rem}
+  .alarm-tile-hero .alarm-tile-value{font-size:1.05rem}
+}
+</style>
+{% endblock %}
 {% block body %}
-<div class="alarm-nav"><a href="/">← Home</a><span>Presency</span></div>
-<div class="container-fluid alarm-fit">
+<div class="alarm-nav"><a href="/">← Home</a><span style="letter-spacing:.06em;font-size:.68rem;opacity:.9">PRESENCY • ALARM</span></div>
+<div class="alarm-shell">
   {% if error %}
-  <div class="alert alert-warning text-center py-1 mb-1" role="alert" style="font-size:.85rem">Daten nicht verfügbar ({{ now|date:"d.m.Y H:i:s" }}) {% if error != "Daten nicht verfügbar" %}- {{ error }}{% endif %}</div>
+  <div class="alarm-error" role="alert">Daten nicht verfügbar ({{ now|date:"d.m.Y H:i:s" }}) {% if error != "Daten nicht verfügbar" %}— {{ error }}{% endif %}</div>
   {% endif %}
   <div class="alarm-grid">
-    <div class="alarm-hero">
+    <div class="alarm-row alarm-hero">
       {% if active and title %}
-      <div class="alarm-tile alarm-tile-hero">
+      <div class="alarm-tile alarm-tile-hero active-dot">
         <div class="alarm-tile-label">Alarm</div>
         <div class="alarm-tile-value">{{ title }}</div>
       </div>
       {% else %}
-      <div class="alarm-tile alarm-idle-tile">
+      <div class="alarm-tile alarm-idle">
         <div class="alarm-tile-label">Alarm</div>
         <div class="alarm-tile-value">—</div>
       </div>
       {% endif %}
-      <div class="alarm-tile {% if active and priority %}alarm-tile-prio{% else %}alarm-idle-tile{% endif %}">
+      <div class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Priorität</div>
         <div class="alarm-tile-value">{% if active and priority %}Ja{% else %}—{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-stand">
         <div class="alarm-tile-label">Stand</div>
-        <div class="alarm-tile-value" style="font-size:.95rem">{{ now|date:"d.m.Y H:i:s" }}</div>
+        <div class="alarm-tile-value">{{ now|date:"d.m.Y H:i:s" }}</div>
       </div>
     </div>
 
-    <div class="alarm-row2">
+    <div class="alarm-row alarm-row2">
       <div class="alarm-tile alarm-tile-blue">
         <div class="alarm-tile-label">Adresse</div>
-        <div class="alarm-tile-value" style="font-size:1rem">
-          {% if active and address %}{{ address }}{% elif active and lat and lng %}<a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=18/{{ lat }}/{{ lng }}" target="_blank" rel="noopener" style="color:#17a2b8">{{ lat }}, {{ lng }}</a>{% else %}—{% endif %}
+        <div class="alarm-tile-value">
+          {% if active and address %}{{ address }}{% elif active and lat and lng %}<a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=18/{{ lat }}/{{ lng }}" target="_blank" rel="noopener" style="color:#4d8dff">{{ lat }}, {{ lng }}</a>{% else %}—{% endif %}
         </div>
       </div>
       <div class="alarm-tile alarm-tile-blue">
         <div class="alarm-tile-label">alarmierte Fahrzeuge</div>
-        <div class="alarm-tile-value" style="font-size:1rem">{% if active and vehicle_names %}{% for name in vehicle_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}—{% endif %}</div>
+        <div class="alarm-tile-value">{% if active and vehicle_names %}{% for name in vehicle_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}—{% endif %}</div>
       </div>
     </div>
 
-    <div class="alarm-row3">
+    <div class="alarm-row alarm-row3">
       <div class="alarm-tile alarm-tile-green">
         <div class="alarm-tile-label">Status</div>
         {% if status_display %}
         <div class="alarm-roles">
           {% for s in status_display %}
           <div class="alarm-role">
-            <span class="alarm-role-name" style="color:{% if s.color == 'success' %}#28a745{% elif s.color == 'primary' or s.color == 'info' %}#17a2b8{% elif s.color == 'warning' %}#ffc107{% elif s.color == 'danger' %}#dc3545{% elif s.color == 'dark' %}#8b0000{% else %}#6c757d{% endif %}">{{ s.short }}</span>
+            <span class="alarm-role-name" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#8a94a8{% endif %}">{{ s.short }}</span>
             <span class="alarm-role-members">{{ s.count }}</span>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <div class="alarm-tile-value" style="font-size:1rem">—</div>
+        <div class="alarm-tile-value">—</div>
         {% endif %}
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Verfügbare Einsatzkräfte</div>
         {% if role_counts %}
         <div class="alarm-roles">
-          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members" {% if role_counts.AGT < 2 %}style="color:#dc3545"{% elif role_counts.AGT < 4 %}style="color:#ffc107"{% endif %}>{{ role_counts.AGT }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members" {% if role_counts.AGT < 2 %}style="color:#ff5a5a"{% elif role_counts.AGT < 4 %}style="color:#ffc14d"{% endif %}>{{ role_counts.AGT }}</span></div>
           <div class="alarm-role"><span class="alarm-role-name">ABC</span><span class="alarm-role-members">{{ role_counts.ABC }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members" {% if role_counts.MA < 1 %}style="color:#dc3545"{% endif %}>{{ role_counts.MA }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members" {% if role_counts.GF < 1 %}style="color:#ffc107"{% endif %}>{{ role_counts.GF }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members" {% if role_counts.MA < 1 %}style="color:#ff5a5a"{% endif %}>{{ role_counts.MA }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members" {% if role_counts.GF < 1 %}style="color:#ffc14d"{% endif %}>{{ role_counts.GF }}</span></div>
         </div>
         {% else %}
-        <div class="alarm-tile-value" style="font-size:1rem">—</div>
+        <div class="alarm-tile-value">—</div>
         {% endif %}
       </div>
     </div>
 
-    {% if crew_list %}
-    <div class="alarm-tile alarm-tile-blue" style="padding:.5rem .75rem">
+    <div class="alarm-tile alarm-tile-blue alarm-crew-wrap">
       <div class="alarm-tile-label">Statusübersicht</div>
+      {% if crew_list %}
       <div class="alarm-people">
         {% for p in crew_list %}
         <div class="alarm-person dot-{{ p.color }}">{{ p.name }}{% if p.since %} <span class="alarm-person-since">{{ p.since }}</span>{% endif %}</div>
         {% endfor %}
       </div>
+      {% else %}
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#5a6579;font-size:.82rem;font-weight:600">Keine Einsatzkräfte</div>
+      {% endif %}
     </div>
-    {% else %}
-    <div class="alarm-tile alarm-tile-blue" style="padding:.5rem .75rem;text-align:center;justify-content:center;align-items:center">
-      <div class="alarm-tile-label">Statusübersicht</div>
-      <div style="color:#6c757d;font-size:.9rem">Keine Einsatzkräfte</div>
-    </div>
-    {% endif %}
   </div>
 </div>
 {% endblock %}
 {% block js %}
-<script>
-setInterval(function(){ location.reload(); }, 15000);
-</script>
+<script>setInterval(function(){ location.reload(); }, 15000);</script>
 {% endblock %}

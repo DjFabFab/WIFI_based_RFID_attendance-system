@@ -2,60 +2,42 @@
 <!doctype html>
 <html lang="de">
 <head>
-	<!-- Required meta tags -->
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
-
-	<!-- Bootstrap CSS (vendored locally — no runtime CDN dependency) -->
+	<meta name="theme-color" content="#0e1116">
 	<link rel="stylesheet" href="{% static 'attendance/vendor/bootstrap.min.css' %}">
-
-	<!-- Kiosk theme: dark, high-contrast, touch-friendly (overrides Bootstrap) -->
 	<link rel="stylesheet" href="{% static 'attendance/kiosk.css' %}">
 	<link rel="stylesheet" href="{% static 'attendance/virtual-keyboard.css' %}">
 	{% block extra_head %}{% endblock %}
-
-	<title>{% block title %}{% endblock %}</title>
+	<title>{% block title %}Presency{% endblock %}</title>
 </head>
 <body>
-<nav class="navbar navbar-expand-md navbar-dark bg-dark">
-	<a class="navbar-brand" href="/home">Presency</a>
+<nav class="navbar navbar-expand-md navbar-dark bg-dark" aria-label="Hauptnavigation">
+	<a class="navbar-brand" href="/home" aria-label="Presency Home">
+		<span class="brand-dot" aria-hidden="true"></span>Presency
+	</a>
 	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-			aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+			aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Menü öffnen">
 		<span class="navbar-toggler-icon"></span>
 	</button>
-
 	<div class="collapse navbar-collapse" id="navbarSupportedContent">
-		<ul class="navbar-nav mr-auto">
-			<li class="nav-item active">
-				<a class="nav-link" href="/home">Home<span class="sr-only">(current)</span></a>
+		<ul class="navbar-nav ml-auto">
+			<li class="nav-item{% if request.path == '/' or request.path == '/home' or request.path == '/home/' %} active{% endif %}">
+				<a class="nav-link" href="/home"{% if request.path == '/' or request.path == '/home' or request.path == '/home/' %} aria-current="page"{% endif %}>Home</a>
 			</li>
-			<!-- <li class="nav-item active">
-				<a class="nav-link" href="/users">Nutzer</a>
-			</li> -->
-			<li class="nav-item active">
-				<a class="nav-link" href="/manage">Nutzer verwalten</a>
+			<li class="nav-item{% if request.path|slice:':7' == '/manage' %} active{% endif %}">
+				<a class="nav-link" href="/manage"{% if request.path|slice:':7' == '/manage' %} aria-current="page"{% endif %}>Nutzer verwalten</a>
 			</li>
-			<li class="nav-item">
-				<a class="nav-link" href="/alarm/">Alarm</a>
+			<li class="nav-item{% if request.path|slice:':6' == '/alarm' %} active{% endif %}">
+				<a class="nav-link" href="/alarm/"{% if request.path|slice:':6' == '/alarm' %} aria-current="page"{% endif %}>Alarm</a>
 			</li>
-			<!-- <li class="nav-item dropdown">
-				<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
-				   aria-haspopup="true" aria-expanded="false">
-					Developer
-				</a>
-				<div class="dropdown-menu" aria-labelledby="navbarDropdown">
-					<a class="dropdown-item" href="https://github.com/shubhamkumar27">GitHub Profile</a>
-					<a class="dropdown-item" href="https://www.linkedin.com/in/shubham-kumar-7b539b151/">LinkedIn
-						Profile</a>
-				</div>
-			</li> -->
 		</ul>
 	</div>
 </nav>
-<div class="kiosk-wake-hint">Berühren zum Aufwachen</div>
+<div class="kiosk-wake-hint" role="status" aria-live="polite">Berühren zum Aufwachen</div>
+<main class="kiosk-main">
 {% block body %}{% endblock %}
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS (all vendored locally) -->
+</main>
 <script src="{% static 'attendance/vendor/jquery-3.3.1.min.js' %}"></script>
 <script src="{% static 'attendance/vendor/popper.min.js' %}"></script>
 <script src="{% static 'attendance/vendor/bootstrap.min.js' %}"></script>
