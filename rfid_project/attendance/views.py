@@ -51,9 +51,9 @@ def get_alarm_display(payload: dict) -> dict:
         "group_names": [],
         "status_counts": {},
         "status_display": [],
-        "role_counts": {"AGT": 0, "MA": 0, "GF": 0},
+        "role_counts": {"AGT": 0, "MA": 0, "GF": 0, "ABC": 0},
         "crew_list": [],
-        "role_names": {"AGT": [], "MA": [], "GF": []},
+        "role_names": {"AGT": [], "MA": [], "GF": [], "ABC": []},
     }
     try:
         if not isinstance(payload, dict):
@@ -292,7 +292,7 @@ def get_alarm_display(payload: dict) -> dict:
         group_names = _resolve(group_ids, group_map)
 
         status_counts = {}
-        role_counts = {"AGT": 0, "MA": 0, "GF": 0}
+        role_counts = {"AGT": 0, "MA": 0, "GF": 0, "ABC": 0}
         try:
             monitor = data.get("monitor")
             if isinstance(monitor, dict):
@@ -305,7 +305,7 @@ def get_alarm_display(payload: dict) -> dict:
                                 status_counts[str(sid)] = all_cnt
                     _available_colors = {"success", "primary", "info", "warning"}
                     _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
-                    default_role_map = {"AGT": [2], "MA": [62], "GF": [3, 4]}
+                    default_role_map = {"AGT": [2], "MA": [62], "GF": [3, 4], "ABC": [26]}
                     role_map = dict(default_role_map)
                     try:
                         for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
@@ -313,7 +313,7 @@ def get_alarm_display(payload: dict) -> dict:
                             if p.exists():
                                 jm = json.loads(p.read_text(encoding="utf-8"))
                                 if isinstance(jm, dict):
-                                    for rk in ("AGT", "MA", "GF"):
+                                    for rk in ("AGT", "MA", "GF", "ABC"):
                                         if rk in jm and isinstance(jm[rk], list):
                                             role_map[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
                                 break
@@ -346,7 +346,7 @@ def get_alarm_display(payload: dict) -> dict:
             pass
 
         crew_list = []
-        role_names = {"AGT": [], "MA": [], "GF": []}
+        role_names = {"AGT": [], "MA": [], "GF": [], "ABC": []}
         try:
             _color_map_for_names = {}
             try:
@@ -362,14 +362,14 @@ def get_alarm_display(payload: dict) -> dict:
             except Exception:
                 _color_map_for_names = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
 
-            _role_map2 = {"AGT": [2], "MA": [62], "GF": [3, 4]}
+            _role_map2 = {"AGT": [2], "MA": [62], "GF": [3, 4], "ABC": [26]}
             try:
                 for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
                           pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
                     if p.exists():
                         jm = json.loads(p.read_text(encoding="utf-8"))
                         if isinstance(jm, dict):
-                            for rk in ("AGT", "MA", "GF"):
+                            for rk in ("AGT", "MA", "GF", "ABC"):
                                 if rk in jm and isinstance(jm[rk], list):
                                     _role_map2[rk] = [int(x) for x in jm[rk] if str(x).lstrip("-").isdigit()]
                         break
