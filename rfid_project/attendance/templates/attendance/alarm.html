@@ -102,10 +102,10 @@ nav.navbar{display:none !important}
         <div class="alarm-tile-label">Verfügbare Einsatzkräfte</div>
         {% if role_counts %}
         <div class="alarm-roles">
-          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members">{{ role_counts.AGT }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members" {% if role_counts.AGT < 2 %}style="color:#dc3545"{% elif role_counts.AGT < 4 %}style="color:#ffc107"{% endif %}>{{ role_counts.AGT }}</span></div>
           <div class="alarm-role"><span class="alarm-role-name">ABC</span><span class="alarm-role-members">{{ role_counts.ABC }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members">{{ role_counts.MA }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members">{{ role_counts.GF }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members" {% if role_counts.MA < 1 %}style="color:#dc3545"{% endif %}>{{ role_counts.MA }}</span></div>
+          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members" {% if role_counts.GF < 1 %}style="color:#ffc107"{% endif %}>{{ role_counts.GF }}</span></div>
         </div>
         {% else %}
         <div class="alarm-tile-value" style="font-size:1rem">—</div>
