@@ -331,7 +331,7 @@ class AlarmViewTests(TestCase):
         self.assertIn("Testalarm", content)
         self.assertIn("LF 10", content)
         self.assertIn("Priorit", content)
-        self.assertEqual(resp["Cache-Control"], "no-store")
+        self.assertIn("no-store", resp["Cache-Control"])
         mock_get.assert_called_once()
 
     def test_alarm_closed_shows_idle(self):
@@ -344,7 +344,7 @@ class AlarmViewTests(TestCase):
                 resp = self.client.get("/alarm/")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Keine Einsatzkräfte", resp.content.decode())
-        self.assertEqual(resp["Cache-Control"], "no-store")
+        self.assertIn("no-store", resp["Cache-Control"])
 
     def test_alarm_empty_items_shows_idle(self):
         payload = {"success": True, "data": {"alarm": {"items": []}}}
@@ -393,7 +393,7 @@ class AlarmViewTests(TestCase):
         content = resp.content.decode()
         self.assertIn("Daten nicht verf", content)
         self.assertIn("Keine Einsatzkräfte", content)
-        self.assertEqual(resp["Cache-Control"], "no-store")
+        self.assertIn("no-store", resp["Cache-Control"])
 
     def test_alarm_network_error_shows_banner(self):
         import requests
@@ -405,7 +405,7 @@ class AlarmViewTests(TestCase):
         content = resp.content.decode()
         self.assertIn("Daten nicht verf", content)
         self.assertIn("Keine Einsatzkräfte", content)
-        self.assertEqual(resp["Cache-Control"], "no-store")
+        self.assertIn("no-store", resp["Cache-Control"])
 
     def test_alarm_address_fallback_uses_map_link(self):
         payload = {

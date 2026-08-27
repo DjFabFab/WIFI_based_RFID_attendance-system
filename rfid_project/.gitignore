@@ -23,3 +23,4 @@ db.sqlite3.bak
 deployment/divera_kiosk.env
 # Local PI connection notes -- never commit (contains internal IPs)
 deployment/PI_ACCESS.md
+staticfiles/

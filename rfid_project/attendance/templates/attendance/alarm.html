@@ -70,91 +70,130 @@ nav.navbar{display:none !important}
 {% block body %}
 <div class="alarm-nav"><a href="/">← Home</a><span style="letter-spacing:.06em;font-size:.68rem;opacity:.9">PRESENCY • ALARM</span></div>
 <div class="alarm-shell">
-  {% if error %}
-  <div class="alarm-error" role="alert">Daten nicht verfügbar ({{ now|date:"d.m.Y H:i:s" }}) {% if error != "Daten nicht verfügbar" %}— {{ error }}{% endif %}</div>
-  {% endif %}
+  <div id="alarm-error" class="alarm-error" role="alert" {% if not error %}hidden{% endif %}>{% if error %}Daten nicht verfügbar (<span id="alarm-error-now">{{ now|date:"d.m.Y H:i:s" }}</span>){% if error != "Daten nicht verfügbar" %} — <span id="alarm-error-msg">{{ error }}</span>{% endif %}{% endif %}</div>
   <div class="alarm-grid">
     <div class="alarm-row alarm-hero">
-      {% if active and title %}
-      <div class="alarm-tile alarm-tile-hero active-dot">
+      <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Alarm</div>
-        <div class="alarm-tile-value">{{ title }}</div>
+        <div id="alarm-title" class="alarm-tile-value">{% if active and title %}{{ title }}{% else %}—{% endif %}</div>
       </div>
-      {% else %}
-      <div class="alarm-tile alarm-idle">
-        <div class="alarm-tile-label">Alarm</div>
-        <div class="alarm-tile-value">—</div>
-      </div>
-      {% endif %}
-      <div class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
+      <div id="alarm-prio-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Priorität</div>
-        <div class="alarm-tile-value">{% if active and priority %}Ja{% else %}—{% endif %}</div>
+        <div id="alarm-priority" class="alarm-tile-value">{% if active and priority %}Ja{% else %}—{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-stand">
         <div class="alarm-tile-label">Stand</div>
-        <div class="alarm-tile-value">{{ now|date:"d.m.Y H:i:s" }}</div>
+        <div id="alarm-stand" class="alarm-tile-value">{{ now|date:"d.m.Y H:i:s" }}</div>
       </div>
     </div>
 
     <div class="alarm-row alarm-row2">
       <div class="alarm-tile alarm-tile-blue">
         <div class="alarm-tile-label">Adresse</div>
-        <div class="alarm-tile-value">
-          {% if active and address %}{{ address }}{% elif active and lat and lng %}<a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=18/{{ lat }}/{{ lng }}" target="_blank" rel="noopener" style="color:#4d8dff">{{ lat }}, {{ lng }}</a>{% else %}—{% endif %}
-        </div>
+        <div id="alarm-address" class="alarm-tile-value">{% if active and address %}{{ address }}{% elif active and lat and lng %}<a href="https://www.openstreetmap.org/?mlat={{ lat }}&mlon={{ lng }}#map=18/{{ lat }}/{{ lng }}" target="_blank" rel="noopener" style="color:#4d8dff">{{ lat }}, {{ lng }}</a>{% else %}—{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-blue">
         <div class="alarm-tile-label">alarmierte Fahrzeuge</div>
-        <div class="alarm-tile-value">{% if active and vehicle_names %}{% for name in vehicle_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}—{% endif %}</div>
+        <div id="alarm-vehicles" class="alarm-tile-value">{% if active and vehicle_names %}{% for name in vehicle_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}—{% endif %}</div>
       </div>
     </div>
 
     <div class="alarm-row alarm-row3">
       <div class="alarm-tile alarm-tile-green">
         <div class="alarm-tile-label">Status</div>
-        {% if status_display %}
-        <div class="alarm-roles">
-          {% for s in status_display %}
-          <div class="alarm-role">
-            <span class="alarm-role-name" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#8a94a8{% endif %}">{{ s.short }}</span>
-            <span class="alarm-role-members">{{ s.count }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="alarm-tile-value">—</div>
-        {% endif %}
+        <div id="alarm-status"><%-- JS will render --%>{% if status_display %}<div class="alarm-roles">{% for s in status_display %}<div class="alarm-role"><span class="alarm-role-name" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#8a94a8{% endif %}">{{ s.short }}</span><span class="alarm-role-members">{{ s.count }}</span></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value">—</div>{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Verfügbare Einsatzkräfte</div>
-        {% if role_counts %}
-        <div class="alarm-roles">
-          <div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members" {% if role_counts.AGT < 2 %}style="color:#ff5a5a"{% elif role_counts.AGT < 4 %}style="color:#ffc14d"{% endif %}>{{ role_counts.AGT }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">ABC</span><span class="alarm-role-members">{{ role_counts.ABC }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members" {% if role_counts.MA < 1 %}style="color:#ff5a5a"{% endif %}>{{ role_counts.MA }}</span></div>
-          <div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members" {% if role_counts.GF < 1 %}style="color:#ffc14d"{% endif %}>{{ role_counts.GF }}</span></div>
-        </div>
-        {% else %}
-        <div class="alarm-tile-value">—</div>
-        {% endif %}
+        <div id="alarm-roles">{% if role_counts %}<div class="alarm-roles"><div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members" {% if role_counts.AGT < 2 %}style="color:#ff5a5a"{% elif role_counts.AGT < 4 %}style="color:#ffc14d"{% endif %}>{{ role_counts.AGT }}</span></div><div class="alarm-role"><span class="alarm-role-name">ABC</span><span class="alarm-role-members">{{ role_counts.ABC }}</span></div><div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members" {% if role_counts.MA < 1 %}style="color:#ff5a5a"{% endif %}>{{ role_counts.MA }}</span></div><div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members" {% if role_counts.GF < 1 %}style="color:#ffc14d"{% endif %}>{{ role_counts.GF }}</span></div></div>{% else %}<div class="alarm-tile-value">—</div>{% endif %}</div>
       </div>
     </div>
 
     <div class="alarm-tile alarm-tile-blue alarm-crew-wrap">
       <div class="alarm-tile-label">Statusübersicht</div>
-      {% if crew_list %}
-      <div class="alarm-people">
-        {% for p in crew_list %}
-        <div class="alarm-person dot-{{ p.color }}">{{ p.name }}{% if p.since %} <span class="alarm-person-since">{{ p.since }}</span>{% endif %}</div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#5a6579;font-size:.82rem;font-weight:600">Keine Einsatzkräfte</div>
-      {% endif %}
+      <div id="alarm-crew">{% if crew_list %}<div class="alarm-people">{% for p in crew_list %}<div class="alarm-person dot-{{ p.color }}">{{ p.name }}{% if p.since %} <span class="alarm-person-since">{{ p.since }}</span>{% endif %}</div>{% endfor %}</div>{% else %}<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#5a6579;font-size:.82rem;font-weight:600">Keine Einsatzkräfte</div>{% endif %}</div>
     </div>
   </div>
 </div>
 {% endblock %}
 {% block js %}
-<script>setInterval(function(){ location.reload(); }, 15000);</script>
+<script>
+(function(){
+  var ALARM_DATA_URL = "{% url 'alarm_data' %}";
+  function colorFor(c){ if(c==='success')return '#3ddc84'; if(c==='primary'||c==='info')return '#4d8dff'; if(c==='warning')return '#ffc14d'; if(c==='danger')return '#ff5a5a'; if(c==='dark')return '#8b0000'; return '#8a94a8'; }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+  function renderAlarm(d){
+    var heroTile=document.getElementById('alarm-hero-tile');
+    var prioTile=document.getElementById('alarm-prio-tile');
+    var titleEl=document.getElementById('alarm-title');
+    var prioEl=document.getElementById('alarm-priority');
+    var standEl=document.getElementById('alarm-stand');
+    var addrEl=document.getElementById('alarm-address');
+    var vehEl=document.getElementById('alarm-vehicles');
+    var statusEl=document.getElementById('alarm-status');
+    var rolesEl=document.getElementById('alarm-roles');
+    var crewEl=document.getElementById('alarm-crew');
+    var errEl=document.getElementById('alarm-error');
+    var errNow=document.getElementById('alarm-error-now');
+    if(standEl) standEl.textContent = d.now || new Date().toLocaleString('de-DE');
+    if(d.error){
+      if(errEl){
+        errEl.hidden=false;
+        var base = ['Daten','nicht','verf\u00fcgbar'].join(' ');
+        var extra = (d.error && d.error !== base) ? ' \u2014 ' + esc(d.error) : '';
+        errEl.innerHTML = base + ' (' + esc(d.now || '') + ')' + extra;
+      }
+    } else {
+      if(errEl){ errEl.hidden=true; errEl.innerHTML=''; }
+    }
+    var active = !!d.active;
+    if(heroTile){
+      heroTile.className = 'alarm-tile ' + (active && d.title ? 'alarm-tile-hero active-dot' : 'alarm-idle');
+      if(titleEl) titleEl.textContent = (active && d.title) ? d.title : '—';
+    }
+    if(prioTile){
+      prioTile.className = 'alarm-tile ' + (active && d.priority ? 'alarm-tile-prio active-dot' : 'alarm-idle');
+      if(prioEl) prioEl.textContent = (active && d.priority) ? 'Ja' : '—';
+    }
+    if(addrEl){
+      if(active && d.address){ addrEl.textContent = d.address; }
+      else if(active && d.lat && d.lng){ addrEl.innerHTML = '<a href="https://www.openstreetmap.org/?mlat='+esc(String(d.lat))+'&mlon='+esc(String(d.lng))+'#map=18/'+esc(String(d.lat))+'/'+esc(String(d.lng))+'" target="_blank" rel="noopener" style="color:#4d8dff">'+esc(String(d.lat))+', '+esc(String(d.lng))+'</a>'; }
+      else { addrEl.textContent = '—'; }
+    }
+    if(vehEl){
+      if(active && d.vehicle_names && d.vehicle_names.length){ vehEl.textContent = d.vehicle_names.join(', '); } else { vehEl.textContent='—'; }
+    }
+    if(statusEl){
+      if(d.status_display && d.status_display.length){
+        var html='<div class="alarm-roles">';
+        d.status_display.forEach(function(s){ html+='<div class="alarm-role"><span class="alarm-role-name" style="color:'+colorFor(s.color)+'">'+esc(s.short)+'</span><span class="alarm-role-members">'+esc(String(s.count))+'</span></div>'; });
+        html+='</div>'; statusEl.innerHTML=html;
+      } else { statusEl.innerHTML='<div class="alarm-tile-value">—</div>'; }
+    }
+    if(rolesEl){
+      if(d.role_counts){
+        var rc=d.role_counts;
+        var agtStyle = rc.AGT<2 ? ' style="color:#ff5a5a"' : (rc.AGT<4 ? ' style="color:#ffc14d"' : '');
+        var maStyle = rc.MA<1 ? ' style="color:#ff5a5a"' : '';
+        var gfStyle = rc.GF<1 ? ' style="color:#ffc14d"' : '';
+        rolesEl.innerHTML='<div class="alarm-roles"><div class="alarm-role"><span class="alarm-role-name">AGT</span><span class="alarm-role-members"'+agtStyle+'>'+esc(String(rc.AGT))+'</span></div><div class="alarm-role"><span class="alarm-role-name">ABC</span><span class="alarm-role-members">'+esc(String(rc.ABC))+'</span></div><div class="alarm-role"><span class="alarm-role-name">MA</span><span class="alarm-role-members"'+maStyle+'>'+esc(String(rc.MA))+'</span></div><div class="alarm-role"><span class="alarm-role-name">GF</span><span class="alarm-role-members"'+gfStyle+'>'+esc(String(rc.GF))+'</span></div></div>';
+      } else { rolesEl.innerHTML='<div class="alarm-tile-value">—</div>'; }
+    }
+    if(crewEl){
+      if(d.crew_list && d.crew_list.length){
+        var h='<div class="alarm-people">';
+        d.crew_list.forEach(function(p){ h+='<div class="alarm-person dot-'+esc(p.color)+'">'+esc(p.name)+ (p.since ? ' <span class="alarm-person-since">'+esc(p.since)+'</span>' : '') +'</div>'; });
+        h+='</div>'; crewEl.innerHTML=h;
+      } else { crewEl.innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#5a6579;font-size:.82rem;font-weight:600">Keine Einsatzkräfte</div>'; }
+    }
+  }
+  function fetchAlarm(){
+    fetch(ALARM_DATA_URL, {headers:{'Accept':'application/json'}, cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('net'); return r.json(); })
+      .then(renderAlarm)
+      .catch(function(){});
+  }
+  setInterval(fetchAlarm, 15000);
+})();
+</script>
 {% endblock %}

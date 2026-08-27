@@ -90,18 +90,31 @@
     </div>
   </div>
 </div>
+{{ initial_manage_json|json_script:"initial-manage" }}
 {% endblock %}
 
 {% block js %}
 <script>
   $(document).ready(function () {
-    setInterval(function () {
-      $.ajax({
-        url: {% url 'manage1' %}
-      }).done(function (data) {
+    function renderManageRows(users){
+      var html='';
+      for(var i=0;i<users.length;i++){
+        var u=users[i];
+        var name = u.name ? u.name : '';
+        html+='<tr><td>'+u.id+'</td><td>'+u.card_id+'</td><td>'+name+'</td></tr>';
+      }
+      $('#manage').html(html);
+    }
+    var initialManage = (function(){ try { return JSON.parse(document.getElementById('initial-manage').textContent); } catch(e){ return null; } })();
+    if(initialManage && initialManage.length){ renderManageRows(initialManage); }
+    function loadManage(){
+      $.ajax({ url: "{% url 'manage1' %}", cache:false, headers:{'Cache-Control':'no-cache'} }).done(function (data) {
         $('#manage').html(data);
       });
-    }, 10000);
+    }
+    // first poll after 2s to allow initial paint to settle, then every 10s
+    setTimeout(loadManage, 2000);
+    setInterval(loadManage, 10000);
 
     $('#inlineFormInputName2').on('change', function(){ $('#selected_card_id').val($(this).val()); });
   });

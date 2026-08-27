@@ -29,5 +29,6 @@ urlpatterns = [
     path('cardselect/', views.card , name = 'card'),
     path('cardedit/', views.edit , name = 'cardedit'),
     path('present/', views.present, name = 'present'),
+    path('alarm/data/', views.alarm_data, name='alarm_data'),
     path('alarm/', views.alarm, name='alarm'),
 ]

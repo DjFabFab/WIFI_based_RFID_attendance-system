@@ -30,12 +30,14 @@
     </div>
   </div>
 </div>
+{{ initial_present_json|json_script:"initial-present" }}
 {% endblock %}
 {% block js %}
 <script>
   $(document).ready(function () {
     var PRESENT_URL = "{% url 'present' %}";
     var PROCESS_URL = "{% url 'process' %}";
+    var INITIAL_PRESENT = (function(){ try { return JSON.parse(document.getElementById('initial-present').textContent); } catch(e){ return null; } })();
 
     function updateClock() {
       var now = new Date();
@@ -45,30 +47,32 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    function loadPresent() {
-      $.ajax({ url: PRESENT_URL, dataType: 'json' }).done(function (data) {
-        var rows = data || [];
-        var $cards = $('#cards').empty();
-        if (!rows.length) {
-          $('#empty-state').prop('hidden', false);
-          $('#cards-wrap').prop('hidden', true);
-          return;
-        }
-        $('#empty-state').prop('hidden', true);
-        $('#cards-wrap').prop('hidden', false);
-        $.each(rows, function (i, entry) {
-          var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
-          var $tr = $('<tr>');
-          $('<td class="col-name">').text(name).appendTo($tr);
-          $('<td class="col-date">').text(entry.date).appendTo($tr);
-          var $td = $('<td class="col-delete">');
-          $('<button>').attr('type','button').attr('title','Löschen').attr('aria-label','Löschen: ' + name).addClass('btn btn-sm delete-btn').data('card', entry.card_id).append(trashSvg()).appendTo($td);
-          $td.appendTo($tr);
-          $tr.appendTo($cards);
-        });
+    function renderPresent(data) {
+      var rows = data || [];
+      var $cards = $('#cards').empty();
+      if (!rows.length) {
+        $('#empty-state').prop('hidden', false);
+        $('#cards-wrap').prop('hidden', true);
+        return;
+      }
+      $('#empty-state').prop('hidden', true);
+      $('#cards-wrap').prop('hidden', false);
+      $.each(rows, function (i, entry) {
+        var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
+        var $tr = $('<tr>');
+        $('<td class="col-name">').text(name).appendTo($tr);
+        $('<td class="col-date">').text(entry.date).appendTo($tr);
+        var $td = $('<td class="col-delete">');
+        $('<button>').attr('type','button').attr('title','Löschen').attr('aria-label','Löschen: ' + name).addClass('btn btn-sm delete-btn').data('card', entry.card_id).append(trashSvg()).appendTo($td);
+        $td.appendTo($tr);
+        $tr.appendTo($cards);
       });
     }
-    loadPresent();
+    function loadPresent() {
+      $.ajax({ url: PRESENT_URL, dataType: 'json', cache: false, headers: { 'Cache-Control': 'no-cache' } }).done(function (data) { renderPresent(data); });
+    }
+    if (INITIAL_PRESENT !== null) { renderPresent(INITIAL_PRESENT); }
+    else { loadPresent(); }
     setInterval(loadPresent, 10000);
 
     function trashSvg() {

@@ -641,7 +641,11 @@ def search(request):
 
 
 def index(request):
-	return render(request, 'attendance/index.html')
+	logs = Log.objects.filter(date=datetime.date.today(), time_out__isnull=True).order_by('-id')
+	initial = [{'name': log.name, 'card_id': log.card_id, 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
+	resp = render(request, 'attendance/index.html', {'initial_present_json': json.dumps(initial), 'initial_present': initial})
+	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+	return resp
 
 
 def process(request):
@@ -712,14 +716,21 @@ def details(request):
 def manage1(request):
 	users = Student.objects.order_by('-id')
 	userset = {'users': users}
-	return render(request, 'attendance/allusers.html', userset)
+	resp = render(request, 'attendance/allusers.html', userset)
+	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+	resp["Pragma"] = "no-cache"
+	return resp
 
 
 def manage(request):
 	users = Student.objects.order_by('-id')
 	selected_id = request.session.get('selected_card_id')
 	selected_user = Student.objects.filter(id=selected_id).first() if selected_id else None
-	return render(request, 'attendance/manage.html', {'users': users, 'selected_user': selected_user})
+	initial_manage = [{'id': u.id, 'card_id': u.card_id, 'name': u.name or ''} for u in users[:50]]
+	resp = render(request, 'attendance/manage.html', {'users': users, 'selected_user': selected_user, 'initial_manage_json': json.dumps(initial_manage)})
+	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+	resp["Pragma"] = "no-cache"
+	return resp
 
 
 def card(request):
@@ -795,7 +806,10 @@ def present(request):
 		date=datetime.date.today(), time_out__isnull=True).order_by('-id')
 	data = [{'name': log.name, 'card_id': log.card_id,
 			 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
-	return JsonResponse(data, safe=False)
+	resp = JsonResponse(data, safe=False)
+	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+	resp["Pragma"] = "no-cache"
+	return resp
 
 
 def alarm(request):
@@ -808,7 +822,8 @@ def alarm(request):
         ctx["now"] = datetime.datetime.now()
         ctx["error"] = "DIVERA_ACCESS_KEY nicht konfiguriert"
         resp = render(request, "attendance/alarm.html", ctx)
-        resp["Cache-Control"] = "no-store"
+        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        resp["Pragma"] = "no-cache"
         return resp
     try:
         resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=10)
@@ -817,7 +832,8 @@ def alarm(request):
             ctx["now"] = datetime.datetime.now()
             ctx["error"] = "Daten nicht verfügbar"
             resp = render(request, "attendance/alarm.html", ctx)
-            resp["Cache-Control"] = "no-store"
+            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            resp["Pragma"] = "no-cache"
             return resp
         try:
             payload = resp_api.json()
@@ -826,17 +842,69 @@ def alarm(request):
             ctx["now"] = datetime.datetime.now()
             ctx["error"] = "Daten nicht verfügbar"
             resp = render(request, "attendance/alarm.html", ctx)
-            resp["Cache-Control"] = "no-store"
+            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            resp["Pragma"] = "no-cache"
             return resp
     except requests.RequestException:
         ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
         ctx["now"] = datetime.datetime.now()
         ctx["error"] = "Daten nicht verfügbar"
         resp = render(request, "attendance/alarm.html", ctx)
-        resp["Cache-Control"] = "no-store"
+        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        resp["Pragma"] = "no-cache"
         return resp
     ctx = get_alarm_display(payload)
     ctx["now"] = datetime.datetime.now()
     resp = render(request, "attendance/alarm.html", ctx)
-    resp["Cache-Control"] = "no-store"
+    resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp["Pragma"] = "no-cache"
+    return resp
+
+
+def alarm_data(request):
+    if request.method != "GET":
+        return HttpResponse("Method Not Allowed", status=405)
+    access_key = (os.environ.get("DIVERA_ACCESS_KEY") or getattr(settings, "DIVERA_ACCESS_KEY", "") or "").strip()
+    api_url = os.environ.get("DIVERA_API_URL", "https://app.divera247.com/api/v2/pull/all")
+    if not access_key:
+        ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+        ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        ctx["error"] = "DIVERA_ACCESS_KEY nicht konfiguriert"
+        resp = JsonResponse(ctx)
+        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        resp["Pragma"] = "no-cache"
+        return resp
+    try:
+        resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=10)
+        if resp_api.status_code != 200:
+            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+            ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+            ctx["error"] = "Daten nicht verfügbar"
+            resp = JsonResponse(ctx)
+            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            resp["Pragma"] = "no-cache"
+            return resp
+        try:
+            payload = resp_api.json()
+        except ValueError:
+            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+            ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+            ctx["error"] = "Daten nicht verfügbar"
+            resp = JsonResponse(ctx)
+            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            resp["Pragma"] = "no-cache"
+            return resp
+    except requests.RequestException:
+        ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+        ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        ctx["error"] = "Daten nicht verfügbar"
+        resp = JsonResponse(ctx)
+        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        resp["Pragma"] = "no-cache"
+        return resp
+    ctx = get_alarm_display(payload)
+    ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    resp = JsonResponse(ctx)
+    resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp["Pragma"] = "no-cache"
     return resp
