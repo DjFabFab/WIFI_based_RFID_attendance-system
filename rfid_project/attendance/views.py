@@ -424,6 +424,8 @@ def get_alarm_display(payload: dict) -> dict:
                     parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
                     name = " ".join(parts) if parts else uid_str
                 user_sid = _user_status.get(uid_str, "")
+                if user_sid == "79817":
+                    continue
                 color = _color_map_for_names.get(user_sid, "secondary")
                 ts = _user_status_ts.get(uid_str)
                 crew_list.append({"name": name, "color": color, "since": _relative_time(ts) if ts else ""})
@@ -450,6 +452,8 @@ def get_alarm_display(payload: dict) -> dict:
                             parts = [p for p in (fn, ln) if isinstance(p, str) and p.strip()]
                             name = " ".join(parts) if parts else uid_str
                     user_sid = _user_status.get(uid_str, "")
+                    if user_sid == "79817":
+                        continue
                     color = _color_map_for_names.get(user_sid, "secondary")
                     crew_list.append({"name": name, "color": color})
 
@@ -539,7 +543,7 @@ def get_alarm_display(payload: dict) -> dict:
         except Exception:
             color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
         for sid, cnt in status_counts.items():
-            if str(sid) == "0":
+            if str(sid) in ("0", "79817"):
                 continue
             label = sid
             def _short_label(name):
