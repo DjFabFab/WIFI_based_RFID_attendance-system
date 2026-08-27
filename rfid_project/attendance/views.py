@@ -305,7 +305,7 @@ def get_alarm_display(payload: dict) -> dict:
                                 status_counts[str(sid)] = all_cnt
                     _available_colors = {"success", "primary", "info", "warning"}
                     _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
-                    default_role_map = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
+                    default_role_map = {"AGT": [2], "MA": [62], "GF": [3, 4]}
                     role_map = dict(default_role_map)
                     try:
                         for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
@@ -362,7 +362,7 @@ def get_alarm_display(payload: dict) -> dict:
             except Exception:
                 _color_map_for_names = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
 
-            _role_map2 = {"AGT": [58, 22356], "MA": [62, 2], "GF": [3, 4]}
+            _role_map2 = {"AGT": [2], "MA": [62], "GF": [3, 4]}
             try:
                 for p in [pathlib.Path(__file__).resolve().parent.parent / "deployment" / "alarm_roles.json",
                           pathlib.Path(settings.BASE_DIR) / "deployment" / "alarm_roles.json"]:
