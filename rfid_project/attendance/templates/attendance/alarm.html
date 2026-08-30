@@ -58,8 +58,10 @@ nav.navbar{display:none !important}
 /* roles inside status tiles */
 .alarm-roles{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
 .alarm-role{display:flex;flex-direction:column;align-items:center;gap:2px}
-.alarm-role-name{font-size:.75rem;font-weight:800;letter-spacing:.04em;white-space:nowrap;color:#c8d7ea}
+.alarm-role-name{font-size:.75rem;font-weight:800;letter-spacing:.04em;white-space:nowrap;color:#c8d7ea;display:inline-flex;align-items:center;gap:4px}
 .alarm-role-members{font-size:1.02rem;font-weight:800;line-height:1.2;color:#eef2f8;font-variant-numeric:tabular-nums}
+.alarm-role-icon{font-size:.68rem;line-height:1;display:inline-block;flex-shrink:0}
+.alarm-person-icon{font-size:.62rem;line-height:1;display:inline-block;flex-shrink:0;opacity:.95;margin-right:2px}
 /* crew list — pinned to top, content vertically centered when sparse */
 .alarm-crew-wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
 .alarm-people{flex:0 1 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;align-content:start;overflow:hidden;padding:6px 2px;min-height:0;align-items:center;margin:auto 0}
@@ -131,7 +133,7 @@ nav.navbar{display:none !important}
       </div>
       <div class="alarm-tile alarm-tile-vehicle">
         <div class="alarm-tile-label">Fahrzeugstatus</div>
-        <div id="alarm-vehicle-status">{% if vehicle_status_display %}<div class="alarm-vehicle-roles">{% for v in vehicle_status_display %}<div class="alarm-vehicle-item"><span class="alarm-vehicle-name" title="{{ v.name }}">{{ v.name }}</span><div class="alarm-vehicle-status"><span class="alarm-vehicle-fms" title="FMS Status {{ v.short }}" style="color:{% if v.color == 'success' %}#3ddc84{% elif v.color == 'primary' %}#4d8dff{% elif v.color == 'warning' %}#ffc14d{% elif v.color == 'danger' %}#ff5a5a{% elif v.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{{ v.short }}</span>{% if v.since %}<span class="alarm-vehicle-since" title="Seit {{ v.since }}">{{ v.since }}</span>{% endif %}</div></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value"><span class="alarm-empty">—</span></div>{% endif %}</div>
+        <div id="alarm-vehicle-status">{% if vehicle_status_display %}<div class="alarm-vehicle-roles">{% for v in vehicle_status_display %}<div class="alarm-vehicle-item"><span class="alarm-vehicle-name" title="{{ v.name }}">{{ v.name }}</span><div class="alarm-vehicle-status"><span class="alarm-role-icon" aria-hidden="true" style="color:{% if v.color == 'success' %}#3ddc84{% elif v.color == 'primary' %}#4d8dff{% elif v.color == 'warning' %}#ffc14d{% elif v.color == 'danger' %}#ff5a5a{% elif v.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{% if v.color == 'success' %}●{% elif v.color == 'primary' %}◆{% elif v.color == 'warning' %}▲{% elif v.color == 'danger' %}■{% elif v.color == 'dark' %}✕{% else %}○{% endif %}</span><span class="alarm-vehicle-fms" title="FMS Status {{ v.short }}" style="color:{% if v.color == 'success' %}#3ddc84{% elif v.color == 'primary' %}#4d8dff{% elif v.color == 'warning' %}#ffc14d{% elif v.color == 'danger' %}#ff5a5a{% elif v.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{{ v.short }}</span>{% if v.since %}<span class="alarm-vehicle-since" title="Seit {{ v.since }}">{{ v.since }}</span>{% endif %}</div></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value"><span class="alarm-empty">—</span></div>{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-blue">
         <div class="alarm-tile-label">alarmierte Fahrzeuge</div>
@@ -142,7 +144,7 @@ nav.navbar{display:none !important}
     <div class="alarm-row alarm-row3">
       <div class="alarm-tile alarm-tile-green">
         <div class="alarm-tile-label">Status</div>
-        <div id="alarm-status">{% if status_display %}<div class="alarm-roles">{% for s in status_display %}<div class="alarm-role"><span class="alarm-role-name" title="{% if s.short == '≤10min' %}Einsatzkräfte ≤10 Minuten{% elif s.short == '>10min' %}Einsatzkräfte >10 Minuten{% elif s.short == 'GH' %}Gerätehaus{% elif s.short == 'N.einsatzb.' %}Nicht einsetzbar{% else %}{{ s.short }}{% endif %}" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{{ s.short }}</span><span class="alarm-role-members">{{ s.count }}</span></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value"><span class="alarm-empty">—</span></div>{% endif %}</div>
+        <div id="alarm-status">{% if status_display %}<div class="alarm-roles">{% for s in status_display %}<div class="alarm-role"><span class="alarm-role-name" title="{% if s.short == '≤10min' %}Einsatzkräfte ≤10 Minuten{% elif s.short == '>10min' %}Einsatzkräfte >10 Minuten{% elif s.short == 'GH' %}Gerätehaus{% elif s.short == 'N.einsatzb.' %}Nicht einsetzbar{% else %}{{ s.short }}{% endif %}" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}"><span class="alarm-role-icon" aria-hidden="true" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{% if s.color == 'success' %}●{% elif s.color == 'primary' or s.color == 'info' %}◆{% elif s.color == 'warning' %}▲{% elif s.color == 'danger' %}■{% elif s.color == 'dark' %}✕{% else %}○{% endif %}</span>{{ s.short }}</span><span class="alarm-role-members">{{ s.count }}</span></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value"><span class="alarm-empty">—</span></div>{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Verfügbare Einsatzkräfte</div>
@@ -152,7 +154,7 @@ nav.navbar{display:none !important}
 
     <div class="alarm-tile alarm-tile-blue alarm-crew-wrap">
       <div class="alarm-tile-label">Statusübersicht</div>
-      <div id="alarm-crew">{% if crew_list %}<div class="alarm-people">{% for p in crew_list %}<div class="alarm-person dot-{{ p.color }}" title="{{ p.name }}{% if p.since %} — seit {{ p.since }}{% endif %}">{{ p.name }}{% if p.since %} <span class="alarm-person-since" title="Seit {{ p.since }}">{{ p.since }}</span>{% endif %}</div>{% endfor %}</div>{% else %}<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8a9ab0;font-size:.88rem;font-weight:600">Keine Einsatzkräfte</div>{% endif %}</div>
+      <div id="alarm-crew">{% if crew_list %}<div class="alarm-people">{% for p in crew_list %}<div class="alarm-person dot-{{ p.color }}" title="{{ p.name }}{% if p.since %} — seit {{ p.since }}{% endif %}"><span class="alarm-person-icon" aria-hidden="true" style="color:{% if p.color == 'success' %}#3ddc84{% elif p.color == 'primary' or p.color == 'info' %}#4d8dff{% elif p.color == 'warning' %}#ffc14d{% elif p.color == 'danger' %}#ff5a5a{% elif p.color == 'dark' %}#8b0000{% else %}#b0c4d6{% endif %}">{% if p.color == 'success' %}●{% elif p.color == 'primary' or p.color == 'info' %}◆{% elif p.color == 'warning' %}▲{% elif p.color == 'danger' %}■{% elif p.color == 'dark' %}✕{% else %}○{% endif %}</span>{{ p.name }}{% if p.since %} <span class="alarm-person-since" title="Seit {{ p.since }}">{{ p.since }}</span>{% endif %}</div>{% endfor %}</div>{% else %}<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8a9ab0;font-size:.88rem;font-weight:600">Keine Einsatzkräfte</div>{% endif %}</div>
     </div>
   </div>
 </div>
@@ -163,6 +165,7 @@ nav.navbar{display:none !important}
   var ALARM_DATA_URL = "{% url 'alarm_data' %}";
   var errorStreak = 0;
   function colorFor(c){ if(c==='success')return '#3ddc84'; if(c==='primary'||c==='info')return '#4d8dff'; if(c==='warning')return '#ffc14d'; if(c==='danger')return '#ff5a5a'; if(c==='dark')return '#8b0000'; return '#b0c4d6'; }
+  function iconFor(c){ if(c==='success')return '\u25CF'; if(c==='primary'||c==='info')return '\u25C6'; if(c==='warning')return '\u25B2'; if(c==='danger')return '\u25A0'; if(c==='dark')return '\u2715'; return '\u25CB'; }
   function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   function dash(){ return '<span class="alarm-empty">\u2014</span>'; }
   function statusTitle(s){ if(s==='≤10min') return 'Einsatzkr\u00e4fte \u226410 Minuten'; if(s==='>10min') return 'Einsatzkr\u00e4fte >10 Minuten'; if(s==='GH') return 'Ger\u00e4tehaus'; if(s==='N.einsatzb.') return 'Nicht einsetzbar'; return s; }
@@ -229,17 +232,17 @@ nav.navbar{display:none !important}
      if(vehEl){
        if(active && d.vehicle_names && d.vehicle_names.length){ vehEl.textContent = d.vehicle_names.join(', '); } else { vehEl.innerHTML=dash(); }
      }
-      if(vehStatusEl){
+       if(vehStatusEl){
         if(d.vehicle_status_display && d.vehicle_status_display.length){
           var vhtml='<div class="alarm-vehicle-roles">';
-          d.vehicle_status_display.forEach(function(v){ vhtml+='<div class="alarm-vehicle-item"><span class="alarm-vehicle-name" title="'+esc(v.name)+'">'+esc(v.name)+'</span><div class="alarm-vehicle-status"><span class="alarm-vehicle-fms" title="FMS Status '+esc(v.short)+'" style="color:'+colorFor(v.color)+'">'+esc(v.short)+'</span>'+(v.since ? '<span class="alarm-vehicle-since" title="Seit '+esc(v.since)+'">'+esc(v.since)+'</span>' : '')+'</div></div>'; });
+          d.vehicle_status_display.forEach(function(v){ vhtml+='<div class="alarm-vehicle-item"><span class="alarm-vehicle-name" title="'+esc(v.name)+'">'+esc(v.name)+'</span><div class="alarm-vehicle-status"><span class="alarm-role-icon" aria-hidden="true" style="color:'+colorFor(v.color)+'">'+iconFor(v.color)+'</span><span class="alarm-vehicle-fms" title="FMS Status '+esc(v.short)+'" style="color:'+colorFor(v.color)+'">'+esc(v.short)+'</span>'+(v.since ? '<span class="alarm-vehicle-since" title="Seit '+esc(v.since)+'">'+esc(v.since)+'</span>' : '')+'</div></div>'; });
           vhtml+='</div>'; vehStatusEl.innerHTML=vhtml;
         } else { vehStatusEl.innerHTML='<div class="alarm-tile-value">'+dash()+'</div>'; }
       }
      if(statusEl){
       if(d.status_display && d.status_display.length){
         var html='<div class="alarm-roles">';
-        d.status_display.forEach(function(s){ html+='<div class="alarm-role"><span class="alarm-role-name" title="'+esc(statusTitle(s.short))+'" style="color:'+colorFor(s.color)+'">'+esc(s.short)+'</span><span class="alarm-role-members">'+esc(String(s.count))+'</span></div>'; });
+        d.status_display.forEach(function(s){ html+='<div class="alarm-role"><span class="alarm-role-name" title="'+esc(statusTitle(s.short))+'" style="color:'+colorFor(s.color)+'"><span class="alarm-role-icon" aria-hidden="true" style="color:'+colorFor(s.color)+'">'+iconFor(s.color)+'</span>'+esc(s.short)+'</span><span class="alarm-role-members">'+esc(String(s.count))+'</span></div>'; });
         html+='</div>'; statusEl.innerHTML=html;
       } else { statusEl.innerHTML='<div class="alarm-tile-value">'+dash()+'</div>'; }
     }
@@ -257,7 +260,7 @@ nav.navbar{display:none !important}
      if(crewEl){
       if(d.crew_list && d.crew_list.length){
         var h='<div class="alarm-people">';
-        d.crew_list.forEach(function(p){ h+='<div class="alarm-person dot-'+esc(p.color)+'" title="'+esc(p.name)+(p.since ? ' — seit '+esc(p.since) : '')+'">'+esc(p.name)+ (p.since ? ' <span class="alarm-person-since" title="Seit '+esc(p.since)+'">'+esc(p.since)+'</span>' : '') +'</div>'; });
+        d.crew_list.forEach(function(p){ h+='<div class="alarm-person dot-'+esc(p.color)+'" title="'+esc(p.name)+(p.since ? ' — seit '+esc(p.since) : '')+'"><span class="alarm-person-icon" aria-hidden="true" style="color:'+colorFor(p.color)+'">'+iconFor(p.color)+'</span>'+esc(p.name)+ (p.since ? ' <span class="alarm-person-since" title="Seit '+esc(p.since)+'">'+esc(p.since)+'</span>' : '') +'</div>'; });
         h+='</div>'; crewEl.innerHTML=h;
       } else { crewEl.innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#8a9ab0;font-size:.88rem;font-weight:600">Keine Einsatzkräfte</div>'; }
     }
