@@ -138,7 +138,7 @@ STORAGES = {
     },
 }
 # Fallback for Django <4.2
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True
