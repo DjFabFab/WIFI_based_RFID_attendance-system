@@ -32,6 +32,10 @@ nav.navbar{display:none !important}
 .alarm-tile-hero .alarm-tile-value{font-size:1.15rem;letter-spacing:-.02em}
 .alarm-tile-hero.active-dot::after{content:"";position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 0 4px rgba(255,77,77,.18);animation:alarmBlink 1.6s ease-in-out infinite}
 @keyframes alarmBlink{0%,100%{opacity:1}50%{opacity:.45}}
+.alarm-tile-closed{border-color:#3a4152;background:linear-gradient(180deg, rgba(255,255,255,.03) 0%, rgba(255,255,255,0) 100%), #1c222e}
+.alarm-tile-closed .alarm-tile-label{color:#8a94a8}
+.alarm-tile-closed .alarm-tile-value{color:#b6bfd0}
+.alarm-closed-hint{font-size:.68rem;font-weight:600;color:#8a94a8;margin-left:6px;opacity:.9;letter-spacing:.02em}
 .alarm-tile-prio{border-color:rgba(255,77,77,.35);background:linear-gradient(180deg, rgba(255,77,77,.08) 0%, rgba(255,77,77,.02) 100%), #181d26}
 .alarm-tile-prio .alarm-tile-value{color:#ffb4b4}
 .alarm-tile-stand{border-color:#2b3446;background:linear-gradient(180deg, rgba(255,255,255,.03) 0%, rgba(255,255,255,0) 100%), #181d26}
@@ -92,9 +96,9 @@ nav.navbar{display:none !important}
   <div id="alarm-error" class="alarm-error" role="alert" {% if not error %}hidden{% endif %}>{% if error %}Daten nicht verfügbar (<span id="alarm-error-now">{{ now|date:"d.m.Y H:i:s" }}</span>){% if error != "Daten nicht verfügbar" %} — <span id="alarm-error-msg">{{ error }}</span>{% endif %}{% endif %}</div>
   <div class="alarm-grid">
     <div class="alarm-row alarm-hero">
-      <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% elif title %}alarm-tile-hero{% else %}alarm-idle{% endif %}">
+      <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% elif title and closed %}alarm-tile-closed{% elif title %}alarm-tile-hero{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Alarm</div>
-        <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% else %}—{% endif %}</div>
+        <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% if not active and closed %} <span class="alarm-closed-hint">(geschlossen)</span>{% endif %}{% else %}—{% endif %}</div>
       </div>
       <div id="alarm-prio-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Priorität</div>
@@ -192,10 +196,15 @@ nav.navbar{display:none !important}
       if(errEl){ errEl.hidden=true; errEl.innerHTML=''; }
     }
     var active = !!d.active;
+    var closed = !!d.closed;
     if(heroTile){
       if(d.title){
-        heroTile.className = 'alarm-tile alarm-tile-hero' + (active ? ' active-dot' : '');
-        if(titleEl) titleEl.textContent = d.title;
+        if(active){ heroTile.className = 'alarm-tile alarm-tile-hero active-dot'; }
+        else if(closed){ heroTile.className = 'alarm-tile alarm-tile-closed'; }
+        else { heroTile.className = 'alarm-tile alarm-tile-hero'; }
+        if(titleEl){
+          titleEl.innerHTML = esc(d.title) + (!active && closed ? ' <span class="alarm-closed-hint">(geschlossen)</span>' : '');
+        }
       } else if(!d.error){
         heroTile.className = 'alarm-tile alarm-idle';
         if(titleEl) titleEl.textContent = '—';
