@@ -332,7 +332,8 @@ class AlarmViewTests(TestCase):
         self.assertIn("LF 10", content)
         self.assertIn("Priorit", content)
         self.assertIn("no-store", resp["Cache-Control"])
-        mock_get.assert_called_once()
+        self.assertGreaterEqual(mock_get.call_count, 1)
+        self.assertIn("Fahrzeugstatus", content)
 
     def test_alarm_closed_shows_idle(self):
         payload = {

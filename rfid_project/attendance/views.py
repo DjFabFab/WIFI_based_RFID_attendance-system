@@ -12,7 +12,186 @@ import time
 import requests
 
 
-def get_alarm_display(payload: dict) -> dict:
+_FMS_LABELS = {
+    1: "1 Funkfrei",
+    2: "2 Wache",
+    3: "3 Übernommen",
+    4: "4 Am Ort",
+    5: "5 Sprechwunsch",
+    6: "6 N. bereit",
+    7: "7",
+    8: "8",
+    9: "9",
+}
+_FMS_COLORS = {
+    1: "success",
+    2: "success",
+    3: "primary",
+    4: "warning",
+    5: "danger",
+    6: "dark",
+    7: "secondary",
+    8: "secondary",
+    9: "secondary",
+}
+_FMS_SHORT = {
+    1: "1",
+    2: "2",
+    3: "3",
+    4: "4",
+    5: "5",
+    6: "6",
+    7: "7",
+    8: "8",
+    9: "9",
+}
+
+
+def _format_einsatz_ts(raw):
+    if raw is None or raw == "":
+        return "—"
+    ts = None
+    if isinstance(raw, (int, float)):
+        ts = int(raw)
+    elif isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return "—"
+        # numeric string unix ts
+        if s.lstrip("-").isdigit():
+            try:
+                ts = int(s)
+                # heuristic: if ts < 1e11 it's seconds, else ms
+                if ts > 1e12:
+                    ts = ts // 1000
+            except ValueError:
+                # try parse as date string, return as is
+                return s
+        else:
+            # try ISO string
+            try:
+                dt = datetime.datetime.fromisoformat(s.replace("Z", "+00:00"))
+                return dt.strftime("%d.%m.%Y %H:%M")
+            except Exception:
+                return s
+    if ts is None:
+        return "—"
+    # sanity: ts should be between 2000 and 2100
+    if ts < 946684800 or ts > 4102444800:
+        # may be ms already handled
+        return "—"
+    try:
+        dt = datetime.datetime.fromtimestamp(ts)
+        return dt.strftime("%d.%m.%Y %H:%M")
+    except Exception:
+        return "—"
+
+
+def _parse_vehicle_fms_mapping(vehicle_status_payload):
+    """Parse vehicle-status payload (list or {success,data:list}) into {id:{fms,name,note}}."""
+    if vehicle_status_payload is None:
+        return {}
+    data_list = None
+    if isinstance(vehicle_status_payload, dict):
+        if isinstance(vehicle_status_payload.get("data"), list):
+            data_list = vehicle_status_payload["data"]
+        elif isinstance(vehicle_status_payload.get("data"), dict):
+            # sometimes data is dict with numeric keys
+            data_list = list(vehicle_status_payload["data"].values())
+    elif isinstance(vehicle_status_payload, list):
+        data_list = vehicle_status_payload
+    if not isinstance(data_list, list):
+        return {}
+    mapping = {}
+    for item in data_list:
+        if not isinstance(item, dict):
+            continue
+        raw_id = item.get("id")
+        try:
+            fid = int(raw_id)
+        except (ValueError, TypeError):
+            continue
+        fms_raw = item.get("fmsstatus")
+        if fms_raw is None:
+            fms_raw = item.get("fmsstatus_id")
+        if fms_raw is None:
+            fms_raw = item.get("fms_status")
+        if fms_raw is None:
+            fms_raw = item.get("fms")
+        if fms_raw is None:
+            fms_raw = item.get("status")
+        fms_int = None
+        if fms_raw is not None and str(fms_raw).strip() != "":
+            try:
+                fms_int = int(str(fms_raw).strip())
+            except (ValueError, TypeError):
+                fms_int = None
+        name = item.get("name") or item.get("shortname") or item.get("fullname") or str(fid)
+        if not isinstance(name, str):
+            name = str(name)
+        note = item.get("fmsstatus_note") or item.get("note") or ""
+        if not isinstance(note, str):
+            note = str(note) if note is not None else ""
+        mapping[fid] = {"fms": fms_int, "name": name.strip() or str(fid), "note": note.strip()}
+    return mapping
+
+
+def _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, status_mapping, active):
+    """Build per-vehicle FMS display list for alarm dashboard."""
+    # Prefer explicit vehicle-status API mapping; fallback to vehicle_map embedded fms fields
+    fallback_mapping = {}
+    if not status_mapping and isinstance(vehicle_map, dict):
+        for k, v in vehicle_map.items():
+            if isinstance(v, dict):
+                fms_raw = v.get("fmsstatus") or v.get("fmsstatus_id") or v.get("fms") or v.get("status_id")
+                if fms_raw is not None:
+                    try:
+                        fid = int(k)
+                    except (ValueError, TypeError):
+                        continue
+                    try:
+                        fms_int = int(str(fms_raw).strip())
+                    except (ValueError, TypeError):
+                        fms_int = None
+                    name = v.get("name") or v.get("shortname") or str(fid)
+                    fallback_mapping[fid] = {"fms": fms_int, "name": name, "note": ""}
+        if fallback_mapping:
+            status_mapping = fallback_mapping
+
+    display = []
+    if active and vehicle_ids:
+        # show only alarmierte Fahrzeuge when alarm active
+        for idx, vid in enumerate(vehicle_ids):
+            name = vehicle_names[idx] if idx < len(vehicle_names) else str(vid)
+            entry = status_mapping.get(vid) if isinstance(status_mapping, dict) else None
+            if entry:
+                fms = entry.get("fms")
+                vname = entry.get("name") or name
+            else:
+                fms = None
+                vname = name
+            label = _FMS_LABELS.get(fms, "—") if fms is not None else "—"
+            short = _FMS_SHORT.get(fms, "—") if fms is not None else "—"
+            color = _FMS_COLORS.get(fms, "secondary") if fms is not None else "secondary"
+            display.append({"id": vid, "name": vname, "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note","") if entry else ""})
+    else:
+        if status_mapping:
+            for fid, entry in status_mapping.items():
+                fms = entry.get("fms")
+                label = _FMS_LABELS.get(fms, "—") if fms is not None else "—"
+                short = _FMS_SHORT.get(fms, "—") if fms is not None else "—"
+                color = _FMS_COLORS.get(fms, "secondary") if fms is not None else "secondary"
+                display.append({"id": fid, "name": entry.get("name", str(fid)), "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note","")})
+            display.sort(key=lambda x: (x["name"] or "").lower())
+        else:
+            # no mapping: still show vehicle_names with placeholder
+            for idx, vid in enumerate(vehicle_ids):
+                name = vehicle_names[idx] if idx < len(vehicle_names) else str(vid)
+                display.append({"id": vid, "name": name, "fms": None, "label": "—", "short": "—", "color": "secondary", "note": ""})
+    return display
+
+
+def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
     """Pure helper: parse Divera pull/all payload for display.
 
     Reuses :func:`divera_kiosk.parse_latest_alarm` semantics:
@@ -32,6 +211,10 @@ def get_alarm_display(payload: dict) -> dict:
     keys ``active``, ``error``, ``title``, ``address``, ``lat``, ``lng``,
     ``priority``, ``duration``, ``date``, ``closed``, ``id``, ``vehicle_ids``,
     ``group_ids``, ``vehicle_names``, ``group_names``.
+
+    ``vehicle_status_payload`` (optional) is the decoded JSON from
+    ``/api/v2/pull/vehicle-status`` — used to build ``vehicle_status_display``
+    (per-vehicle FMS badges in the middle of row 2).
     """
     idle = {
         "active": False,
@@ -54,7 +237,13 @@ def get_alarm_display(payload: dict) -> dict:
         "role_counts": {"AGT": 0, "MA": 0, "GF": 0, "ABC": 0},
         "crew_list": [],
         "role_names": {"AGT": [], "MA": [], "GF": [], "ABC": []},
+        "vehicle_status_display": [],
+        "einsatz_start": "—",
+        "einsatz_nummer": "—",
     }
+    _early_map = _parse_vehicle_fms_mapping(vehicle_status_payload)
+    if _early_map:
+        idle["vehicle_status_display"] = _build_vehicle_status_display([], [], {}, _early_map, False)
     try:
         if not isinstance(payload, dict):
             return dict(idle)
@@ -163,6 +352,26 @@ def get_alarm_display(payload: dict) -> dict:
                 alarm_id = int(alarm_id) if alarm_id not in (None, "") else None
             except (ValueError, TypeError):
                 alarm_id = None
+
+        einsatz_start_raw = selected.get("date")
+        if einsatz_start_raw in (None, "", 0, "0"):
+            for _k in ("ts_create", "ts_publish", "ts", "timestamp", "time", "created", "start"):
+                if _k in selected and selected[_k] not in (None, "", 0, "0"):
+                    einsatz_start_raw = selected[_k]
+                    break
+        einsatz_start = _format_einsatz_ts(einsatz_start_raw)
+
+        einsatz_nummer_raw = None
+        for _k in ("foreign_id", "number", "einsatznummer", "einsatz_nummer", "reference", "reference_id", "alarm_number", "operation_number", "alarmcode", "code"):
+            if _k in selected and selected[_k] not in (None, "", 0, "0"):
+                einsatz_nummer_raw = selected[_k]
+                break
+        if einsatz_nummer_raw in (None, "", 0, "0"):
+            einsatz_nummer_raw = alarm_id
+        einsatz_nummer = str(einsatz_nummer_raw).strip() if einsatz_nummer_raw not in (None, "") else "—"
+        if not einsatz_nummer or einsatz_nummer in ("0", "None"):
+            einsatz_nummer = "—"
+
         vehicle_ids = None
         for k in ("vehicle", "vehicles", "vehicle_ids", "vehicles_ids"):
             if k in selected and selected[k] is not None:
@@ -290,6 +499,18 @@ def get_alarm_display(payload: dict) -> dict:
 
         vehicle_names = _resolve(vehicle_ids, vehicle_map)
         group_names = _resolve(group_ids, group_map)
+
+        responded_user_ids = []
+        for _rk in ("ucr", "ucr_ids", "responders", "participants", "users", "responder"):
+            if _rk in selected and selected[_rk] is not None:
+                _rv = selected[_rk]
+                if isinstance(_rv, list):
+                    responded_user_ids = [int(x) for x in _rv if str(x).lstrip("-").isdigit()]
+                elif isinstance(_rv, dict):
+                    responded_user_ids = [int(x) for x in _rv.values() if str(x).lstrip("-").isdigit()]
+                elif isinstance(_rv, (int, str)) and str(_rv).strip().lstrip("-").isdigit():
+                    responded_user_ids = [int(str(_rv).strip())]
+                break
 
         status_counts = {}
         role_counts = {"AGT": 0, "MA": 0, "GF": 0, "ABC": 0}
@@ -592,6 +813,25 @@ def get_alarm_display(payload: dict) -> dict:
                     color = "secondary"
             status_display.append({"id": sid, "label": str(label), "short": _short_label(str(label)), "count": cnt, "color": color})
 
+        vehicle_fms_map = _parse_vehicle_fms_mapping(vehicle_status_payload)
+        # also consider inline fms in vehicle_map when external mapping empty
+        if not vehicle_fms_map:
+            inline = {}
+            if isinstance(vehicle_map, dict):
+                for _k, _v in vehicle_map.items():
+                    if isinstance(_v, dict):
+                        _fr = _v.get("fmsstatus") or _v.get("fmsstatus_id") or _v.get("fms") or _v.get("status_id")
+                        if _fr is not None:
+                            try:
+                                _fid = int(_k)
+                                _fms = int(str(_fr).strip())
+                                inline[_fid] = {"fms": _fms, "name": _v.get("name") or str(_fid), "note": ""}
+                            except Exception:
+                                pass
+            if inline:
+                vehicle_fms_map = inline
+        vehicle_status_display = _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, vehicle_fms_map, active)
+
         return {
             "active": active,
             "error": None,
@@ -613,6 +853,9 @@ def get_alarm_display(payload: dict) -> dict:
             "role_counts": role_counts,
             "crew_list": crew_list,
             "role_names": role_names,
+            "vehicle_status_display": vehicle_status_display,
+            "einsatz_start": einsatz_start,
+            "einsatz_nummer": einsatz_nummer,
         }
     except Exception:
         return dict(idle)
@@ -853,7 +1096,23 @@ def alarm(request):
         resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
         resp["Pragma"] = "no-cache"
         return resp
-    ctx = get_alarm_display(payload)
+    vehicle_status_payload = None
+    try:
+        vs_url = os.environ.get("DIVERA_VEHICLE_STATUS_URL", "").strip()
+        if not vs_url:
+            if "/pull/all" in api_url:
+                vs_url = api_url.replace("/pull/all", "/pull/vehicle-status")
+            else:
+                vs_url = "https://app.divera247.com/api/v2/pull/vehicle-status"
+        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=8)
+        if resp_vs.status_code == 200:
+            try:
+                vehicle_status_payload = resp_vs.json()
+            except ValueError:
+                vehicle_status_payload = None
+    except requests.RequestException:
+        vehicle_status_payload = None
+    ctx = get_alarm_display(payload, vehicle_status_payload)
     ctx["now"] = datetime.datetime.now()
     resp = render(request, "attendance/alarm.html", ctx)
     resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
@@ -902,7 +1161,23 @@ def alarm_data(request):
         resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
         resp["Pragma"] = "no-cache"
         return resp
-    ctx = get_alarm_display(payload)
+    vehicle_status_payload = None
+    try:
+        vs_url = os.environ.get("DIVERA_VEHICLE_STATUS_URL", "").strip()
+        if not vs_url:
+            if "/pull/all" in api_url:
+                vs_url = api_url.replace("/pull/all", "/pull/vehicle-status")
+            else:
+                vs_url = "https://app.divera247.com/api/v2/pull/vehicle-status"
+        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=8)
+        if resp_vs.status_code == 200:
+            try:
+                vehicle_status_payload = resp_vs.json()
+            except ValueError:
+                vehicle_status_payload = None
+    except requests.RequestException:
+        vehicle_status_payload = None
+    ctx = get_alarm_display(payload, vehicle_status_payload)
     ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
     resp = JsonResponse(ctx)
     resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
