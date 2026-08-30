@@ -62,9 +62,12 @@ nav.navbar{display:none !important}
 .alarm-role-members{font-size:1.02rem;font-weight:800;line-height:1.2;color:#eef2f8;font-variant-numeric:tabular-nums}
 .alarm-role-icon{font-size:.68rem;line-height:1;display:inline-block;flex-shrink:0}
 .alarm-person-icon{font-size:.62rem;line-height:1;display:inline-block;flex-shrink:0;opacity:.95;margin-right:2px}
-/* crew list — pinned to top, content vertically centered when sparse */
-.alarm-crew-wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center}
-.alarm-people{flex:0 1 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;align-content:start;overflow:hidden;padding:6px 2px;min-height:0;align-items:center;margin:auto 0}
+/* crew list — scrollable to keep readable type when 26+ users (fixes clipping) */
+.alarm-crew-wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
+.alarm-people{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;align-content:start;overflow-y:auto;overflow-x:hidden;padding:6px 2px;min-height:0;align-items:start;scrollbar-width:thin;scrollbar-color:#3a4152 transparent;-webkit-overflow-scrolling:touch}
+.alarm-people::-webkit-scrollbar{width:6px;height:6px}
+.alarm-people::-webkit-scrollbar-thumb{background:#3a4152;border-radius:3px}
+.alarm-people::-webkit-scrollbar-track{background:transparent}
 .alarm-person{display:flex;align-items:center;justify-content:space-between;font-size:.82rem;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.045);border-left:3px solid transparent;gap:6px;line-height:1.4;color:#e2e8f0}
 .alarm-person.dot-success{border-left-color:#3ddc84}
 .alarm-person.dot-primary,.alarm-person.dot-info{border-left-color:#4d8dff}
