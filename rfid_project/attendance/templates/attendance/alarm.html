@@ -99,8 +99,8 @@ nav.navbar{display:none !important}
   <div class="alarm-grid">
     <div class="alarm-row alarm-hero">
       <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% elif title and closed %}alarm-tile-closed{% elif title %}alarm-tile-hero{% else %}alarm-idle{% endif %}">
-        <div class="alarm-tile-label">Alarm</div>
-        <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% if not active and closed %} <span class="alarm-closed-hint">(geschlossen)</span>{% endif %}{% else %}—{% endif %}</div>
+        <div id="alarm-label" class="alarm-tile-label">Alarm{% if not active and closed %} <span class="alarm-closed-hint">(geschlossen)</span>{% endif %}</div>
+        <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% else %}—{% endif %}</div>
       </div>
       <div id="alarm-sonderrechte-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Sonderrechte</div>
@@ -167,6 +167,7 @@ nav.navbar{display:none !important}
     var heroTile=document.getElementById('alarm-hero-tile');
     var prioTile=document.getElementById('alarm-sonderrechte-tile') || document.getElementById('alarm-prio-tile');
     var titleEl=document.getElementById('alarm-title');
+    var labelEl=document.getElementById('alarm-label');
     var prioEl=document.getElementById('alarm-sonderrechte') || document.getElementById('alarm-priority');
     var standEl=document.getElementById('alarm-stand');
     var addrEl=document.getElementById('alarm-address');
@@ -204,12 +205,12 @@ nav.navbar{display:none !important}
         if(active){ heroTile.className = 'alarm-tile alarm-tile-hero active-dot'; }
         else if(closed){ heroTile.className = 'alarm-tile alarm-tile-closed'; }
         else { heroTile.className = 'alarm-tile alarm-tile-hero'; }
-        if(titleEl){
-          titleEl.innerHTML = esc(d.title) + (!active && closed ? ' <span class="alarm-closed-hint">(geschlossen)</span>' : '');
-        }
+        if(titleEl) titleEl.textContent = d.title;
+        if(labelEl) labelEl.innerHTML = 'Alarm' + (!active && closed ? ' <span class="alarm-closed-hint">(geschlossen)</span>' : '');
       } else if(!d.error){
         heroTile.className = 'alarm-tile alarm-idle';
         if(titleEl) titleEl.textContent = '—';
+        if(labelEl) labelEl.textContent = 'Alarm';
       }
     }
     if(prioTile){
