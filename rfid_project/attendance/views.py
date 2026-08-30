@@ -783,8 +783,8 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
                                 if name not in role_names[role]:
                                     role_names[role].append(name)
 
-            _color_order = {"success": 0, "primary": 1, "info": 2, "warning": 3, "danger": 4, "dark": 5, "secondary": 6}
-            crew_list.sort(key=lambda x: (_color_order.get(x["color"], 7), x["name"]))
+            _color_order = {"primary": 0, "info": 0, "success": 1, "warning": 2, "danger": 3, "dark": 4, "secondary": 5}
+            crew_list.sort(key=lambda x: (_color_order.get(x["color"], 6), x["name"]))
         except Exception:
             crew_list = []
             role_names = {"AGT": [], "MA": [], "GF": []}
