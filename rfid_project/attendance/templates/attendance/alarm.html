@@ -14,7 +14,7 @@ nav.navbar{display:none !important}
 .alarm-grid{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
 .alarm-row{display:grid;gap:6px}
 .alarm-hero{grid-template-columns:1.6fr .85fr 1.05fr}
-.alarm-row2{grid-template-columns:0.95fr 1.5fr 0.95fr}
+.alarm-row2{grid-template-columns:0.85fr 1.8fr 0.85fr}
 .alarm-row3{grid-template-columns:1fr 1fr}
 .alarm-row4{grid-template-columns:1fr 1fr}
 /* compact row3+4 — label left, value right, only ~2 lines total */
@@ -41,8 +41,8 @@ nav.navbar{display:none !important}
 .alarm-tile-yellow{border-color:rgba(255,193,77,.26);background:linear-gradient(180deg, rgba(255,193,77,.08) 0%, rgba(255,193,77,.02) 100%), #181d26}
 .alarm-tile-vehicle{border-color:rgba(168,85,247,.28);background:linear-gradient(180deg, rgba(168,85,247,.09) 0%, rgba(168,85,247,.02) 100%), #181d26}
 .alarm-tile-vehicle .alarm-tile-label{color:#d8b4fe}
-.alarm-vehicle-roles{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%}
-.alarm-vehicle-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.05);min-height:38px}
+.alarm-vehicle-roles{display:flex;gap:6px;flex-wrap:nowrap;justify-content:space-between;align-items:stretch;width:100%}
+.alarm-vehicle-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 4px;border-radius:8px;background:rgba(255,255,255,.05);min-height:38px;flex:1;min-width:0}
 .alarm-vehicle-name{font-size:.62rem;font-weight:700;letter-spacing:.03em;color:#d6deea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .alarm-vehicle-fms{font-size:.92rem;font-weight:800;line-height:1}
 .alarm-vehicle-since{font-size:.58rem;opacity:.55;color:#8a94a8;line-height:1}
@@ -92,9 +92,9 @@ nav.navbar{display:none !important}
   <div id="alarm-error" class="alarm-error" role="alert" {% if not error %}hidden{% endif %}>{% if error %}Daten nicht verfügbar (<span id="alarm-error-now">{{ now|date:"d.m.Y H:i:s" }}</span>){% if error != "Daten nicht verfügbar" %} — <span id="alarm-error-msg">{{ error }}</span>{% endif %}{% endif %}</div>
   <div class="alarm-grid">
     <div class="alarm-row alarm-hero">
-      <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% else %}alarm-idle{% endif %}">
+      <div id="alarm-hero-tile" class="alarm-tile {% if active and title %}alarm-tile-hero active-dot{% elif title %}alarm-tile-hero{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Alarm</div>
-        <div id="alarm-title" class="alarm-tile-value">{% if active and title %}{{ title }}{% else %}—{% endif %}</div>
+        <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% else %}—{% endif %}</div>
       </div>
       <div id="alarm-prio-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
         <div class="alarm-tile-label">Priorität</div>
@@ -154,6 +154,7 @@ nav.navbar{display:none !important}
 <script>
 (function(){
   var ALARM_DATA_URL = "{% url 'alarm_data' %}";
+  var errorStreak = 0;
   function colorFor(c){ if(c==='success')return '#3ddc84'; if(c==='primary'||c==='info')return '#4d8dff'; if(c==='warning')return '#ffc14d'; if(c==='danger')return '#ff5a5a'; if(c==='dark')return '#8b0000'; return '#8a94a8'; }
   function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   function renderAlarm(d){
@@ -174,19 +175,31 @@ nav.navbar{display:none !important}
     var errNow=document.getElementById('alarm-error-now');
     if(standEl) standEl.textContent = d.now || new Date().toLocaleString('de-DE');
     if(d.error){
-      if(errEl){
-        errEl.hidden=false;
-        var base = ['Daten','nicht','verf\u00fcgbar'].join(' ');
-        var extra = (d.error && d.error !== base) ? ' \u2014 ' + esc(d.error) : '';
-        errEl.innerHTML = base + ' (' + esc(d.now || '') + ')' + extra;
+      errorStreak++;
+      if(errorStreak >= 2){
+        if(errEl){
+          errEl.hidden=false;
+          var base = ['Daten','nicht','verf\u00fcgbar'].join(' ');
+          var extra = (d.error && d.error !== base) ? ' \u2014 ' + esc(d.error) : '';
+          errEl.innerHTML = base + ' (' + esc(d.now || '') + ')' + extra;
+        }
+      } else {
+        if(errEl){ errEl.hidden=true; errEl.innerHTML=''; }
       }
+      return;
     } else {
+      errorStreak = 0;
       if(errEl){ errEl.hidden=true; errEl.innerHTML=''; }
     }
     var active = !!d.active;
     if(heroTile){
-      heroTile.className = 'alarm-tile ' + (active && d.title ? 'alarm-tile-hero active-dot' : 'alarm-idle');
-      if(titleEl) titleEl.textContent = (active && d.title) ? d.title : '—';
+      if(d.title){
+        heroTile.className = 'alarm-tile alarm-tile-hero' + (active ? ' active-dot' : '');
+        if(titleEl) titleEl.textContent = d.title;
+      } else if(!d.error){
+        heroTile.className = 'alarm-tile alarm-idle';
+        if(titleEl) titleEl.textContent = '—';
+      }
     }
     if(prioTile){
       prioTile.className = 'alarm-tile ' + (active && d.priority ? 'alarm-tile-prio active-dot' : 'alarm-idle');
@@ -234,10 +247,23 @@ nav.navbar{display:none !important}
     }
   }
   function fetchAlarm(){
-    fetch(ALARM_DATA_URL, {headers:{'Accept':'application/json'}, cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw new Error('net'); return r.json(); })
-      .then(renderAlarm)
-      .catch(function(){});
+    var controller = new AbortController();
+    var to = setTimeout(function(){ controller.abort(); }, 15000);
+    fetch(ALARM_DATA_URL, {headers:{'Accept':'application/json'}, cache:'no-store', signal: controller.signal})
+      .then(function(r){ clearTimeout(to); if(!r.ok) throw new Error('net'); return r.json(); })
+      .then(function(data){ clearTimeout(to); renderAlarm(data); })
+      .catch(function(){
+        clearTimeout(to);
+        errorStreak++;
+        if(errorStreak >= 2){
+          var errEl=document.getElementById('alarm-error');
+          if(errEl){
+            errEl.hidden=false;
+            var base = ['Daten','nicht','verf\u00fcgbar'].join(' ');
+            errEl.innerHTML= base + ' ('+new Date().toLocaleString('de-DE')+')';
+          }
+        }
+      });
   }
   setInterval(fetchAlarm, 15000);
 })();

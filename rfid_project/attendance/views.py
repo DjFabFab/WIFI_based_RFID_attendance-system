@@ -1108,27 +1108,45 @@ def alarm(request):
         resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
         resp["Pragma"] = "no-cache"
         return resp
-    try:
-        resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=10)
-        if resp_api.status_code != 200:
-            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
-            ctx["now"] = datetime.datetime.now()
-            ctx["error"] = "Daten nicht verfügbar"
-            resp = render(request, "attendance/alarm.html", ctx)
-            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
-            resp["Pragma"] = "no-cache"
-            return resp
+    payload = None
+    for _attempt in range(2):
         try:
-            payload = resp_api.json()
-        except ValueError:
-            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
-            ctx["now"] = datetime.datetime.now()
-            ctx["error"] = "Daten nicht verfügbar"
-            resp = render(request, "attendance/alarm.html", ctx)
-            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
-            resp["Pragma"] = "no-cache"
-            return resp
-    except requests.RequestException:
+            resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=15)
+            if resp_api.status_code == 200:
+                try:
+                    payload = resp_api.json()
+                    break
+                except ValueError:
+                    if _attempt == 1:
+                        ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                        ctx["now"] = datetime.datetime.now()
+                        ctx["error"] = "Daten nicht verfügbar"
+                        resp = render(request, "attendance/alarm.html", ctx)
+                        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                        resp["Pragma"] = "no-cache"
+                        return resp
+                    continue
+            else:
+                if _attempt == 1:
+                    ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                    ctx["now"] = datetime.datetime.now()
+                    ctx["error"] = "Daten nicht verfügbar"
+                    resp = render(request, "attendance/alarm.html", ctx)
+                    resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                    resp["Pragma"] = "no-cache"
+                    return resp
+        except requests.RequestException:
+            if _attempt == 1:
+                ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                ctx["now"] = datetime.datetime.now()
+                ctx["error"] = "Daten nicht verfügbar"
+                resp = render(request, "attendance/alarm.html", ctx)
+                resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                resp["Pragma"] = "no-cache"
+                return resp
+            time.sleep(0.8)
+            continue
+    if payload is None:
         ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
         ctx["now"] = datetime.datetime.now()
         ctx["error"] = "Daten nicht verfügbar"
@@ -1144,7 +1162,7 @@ def alarm(request):
                 vs_url = api_url.replace("/pull/all", "/pull/vehicle-status")
             else:
                 vs_url = "https://app.divera247.com/api/v2/pull/vehicle-status"
-        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=8)
+        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=12)
         if resp_vs.status_code == 200:
             try:
                 vehicle_status_payload = resp_vs.json()
@@ -1173,27 +1191,45 @@ def alarm_data(request):
         resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
         resp["Pragma"] = "no-cache"
         return resp
-    try:
-        resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=10)
-        if resp_api.status_code != 200:
-            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
-            ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
-            ctx["error"] = "Daten nicht verfügbar"
-            resp = JsonResponse(ctx)
-            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
-            resp["Pragma"] = "no-cache"
-            return resp
+    payload = None
+    for _attempt in range(2):
         try:
-            payload = resp_api.json()
-        except ValueError:
-            ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
-            ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
-            ctx["error"] = "Daten nicht verfügbar"
-            resp = JsonResponse(ctx)
-            resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
-            resp["Pragma"] = "no-cache"
-            return resp
-    except requests.RequestException:
+            resp_api = requests.get(api_url, params={"accesskey": access_key, "access-key": access_key}, timeout=15)
+            if resp_api.status_code == 200:
+                try:
+                    payload = resp_api.json()
+                    break
+                except ValueError:
+                    if _attempt == 1:
+                        ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                        ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+                        ctx["error"] = "Daten nicht verfügbar"
+                        resp = JsonResponse(ctx)
+                        resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                        resp["Pragma"] = "no-cache"
+                        return resp
+                    continue
+            else:
+                if _attempt == 1:
+                    ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                    ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+                    ctx["error"] = "Daten nicht verfügbar"
+                    resp = JsonResponse(ctx)
+                    resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                    resp["Pragma"] = "no-cache"
+                    return resp
+        except requests.RequestException:
+            if _attempt == 1:
+                ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
+                ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+                ctx["error"] = "Daten nicht verfügbar"
+                resp = JsonResponse(ctx)
+                resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+                resp["Pragma"] = "no-cache"
+                return resp
+            time.sleep(0.8)
+            continue
+    if payload is None:
         ctx = get_alarm_display({"success": True, "data": {"alarm": {"items": []}}})
         ctx["now"] = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         ctx["error"] = "Daten nicht verfügbar"
@@ -1209,7 +1245,7 @@ def alarm_data(request):
                 vs_url = api_url.replace("/pull/all", "/pull/vehicle-status")
             else:
                 vs_url = "https://app.divera247.com/api/v2/pull/vehicle-status"
-        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=8)
+        resp_vs = requests.get(vs_url, params={"accesskey": access_key, "access-key": access_key}, timeout=12)
         if resp_vs.status_code == 200:
             try:
                 vehicle_status_payload = resp_vs.json()
