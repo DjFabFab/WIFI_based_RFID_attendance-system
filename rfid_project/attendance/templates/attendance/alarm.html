@@ -41,8 +41,8 @@ nav.navbar{display:none !important}
 .alarm-tile-yellow{border-color:rgba(255,193,77,.26);background:linear-gradient(180deg, rgba(255,193,77,.08) 0%, rgba(255,193,77,.02) 100%), #181d26}
 .alarm-tile-vehicle{border-color:rgba(168,85,247,.28);background:linear-gradient(180deg, rgba(168,85,247,.09) 0%, rgba(168,85,247,.02) 100%), #181d26}
 .alarm-tile-vehicle .alarm-tile-label{color:#d8b4fe}
-.alarm-vehicle-roles{display:flex;gap:6px;flex-wrap:wrap;align-items:start;justify-content:flex-start}
-.alarm-vehicle-item{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:52px;max-width:88px;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.04);flex:1}
+.alarm-vehicle-roles{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%}
+.alarm-vehicle-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.05);min-height:38px}
 .alarm-vehicle-name{font-size:.62rem;font-weight:700;letter-spacing:.03em;color:#d6deea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .alarm-vehicle-fms{font-size:.92rem;font-weight:800;line-height:1}
 .alarm-vehicle-since{font-size:.58rem;opacity:.55;color:#8a94a8;line-height:1}
@@ -135,7 +135,7 @@ nav.navbar{display:none !important}
     <div class="alarm-row alarm-row3">
       <div class="alarm-tile alarm-tile-green">
         <div class="alarm-tile-label">Status</div>
-        <div id="alarm-status"><%-- JS will render --%>{% if status_display %}<div class="alarm-roles">{% for s in status_display %}<div class="alarm-role"><span class="alarm-role-name" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#8a94a8{% endif %}">{{ s.short }}</span><span class="alarm-role-members">{{ s.count }}</span></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value">—</div>{% endif %}</div>
+        <div id="alarm-status">{% if status_display %}<div class="alarm-roles">{% for s in status_display %}<div class="alarm-role"><span class="alarm-role-name" style="color:{% if s.color == 'success' %}#3ddc84{% elif s.color == 'primary' or s.color == 'info' %}#4d8dff{% elif s.color == 'warning' %}#ffc14d{% elif s.color == 'danger' %}#ff5a5a{% elif s.color == 'dark' %}#8b0000{% else %}#8a94a8{% endif %}">{{ s.short }}</span><span class="alarm-role-members">{{ s.count }}</span></div>{% endfor %}</div>{% else %}<div class="alarm-tile-value">—</div>{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-yellow">
         <div class="alarm-tile-label">Verfügbare Einsatzkräfte</div>
