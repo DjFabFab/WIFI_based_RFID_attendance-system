@@ -49,6 +49,9 @@ sudo systemctl enable --now rfid-server.service
 # creates the stable /dev/ttyRFID symlink for the device's USB-serial chip
 # (CH340/CH341 = 1a86:7523, CP210x = 10c4:ea60). If your adapter uses a
 # different chip, edit the VID/PID in rfid_project/deployment/99-rfid.rules first.
+# The bridge authenticates to Django /process/ via the X-Bridge-Token header.
+# Set BRIDGE_TOKEN in divera_kiosk.env (same value the rfid-server.service
+# loads) — the rfid-serial-bridge.service below reads it via EnvironmentFile=.
 RFID_DIR=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
 sudo cp "$RFID_DIR/deployment/rfid-serial-bridge.service" /etc/systemd/system/
 sudo cp "$RFID_DIR/deployment/99-rfid.rules" /etc/udev/rules.d/
@@ -93,6 +96,9 @@ EOF
 # 1. Put the real Divera247 access key into the env file (gitignored):
 #    sudo cp "$RFID_DIR/deployment/divera_kiosk.env.template" "$RFID_DIR/deployment/divera_kiosk.env"
 #    sudo nano "$RFID_DIR/deployment/divera_kiosk.env"   # set DIVERA_ACCESS_KEY=<your real key>
+#    Also set BRIDGE_TOKEN there (generate with
+#    python3 -c "import secrets; print(secrets.token_urlsafe(32))") so the
+#    rfid-serial-bridge.service can authenticate to Django /process/.
 #
 # 2. Start the kiosk browser. Add this line to ~/.config/labwc/autostart
 #    (as the pi user) so Chromium starts with remote debugging enabled:

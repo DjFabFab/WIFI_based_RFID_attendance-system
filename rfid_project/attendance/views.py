@@ -5,11 +5,15 @@ from django.conf import settings
 from .models import Student, Log
 from .uid_utils import preprocess_uid
 import datetime
+import hmac
 import json
+import logging
 import os
 import pathlib
 import time
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 _FMS_LABELS = {
@@ -932,6 +936,23 @@ def index(request):
 
 
 def process(request):
+	# Bridge auth: if a BRIDGE_TOKEN is configured, require the matching
+	# X-Bridge-Token header (sent by rfid_serial_bridge.py). When unset
+	# (dev/tests) the endpoint stays open for backwards compatibility.
+	# Strip both sides so manually exported tokens with trailing whitespace
+	# don't cause spurious 403; use constant-time compare.
+	expected = (os.environ.get("BRIDGE_TOKEN") or getattr(settings, "BRIDGE_TOKEN", "")).strip()
+	if expected:
+		sent = request.headers.get("X-Bridge-Token")
+		sent = sent.strip() if isinstance(sent, str) else sent
+		if not isinstance(sent, str) or not hmac.compare_digest(sent, expected):
+			return HttpResponse("forbidden", status=403)
+	else:
+		# Log once at most per process — per-request warning is noisy in dev
+		if not getattr(process, "_warned_no_token", False):
+			logger.warning("BRIDGE_TOKEN not configured — /process/ unauthenticated")
+			process._warned_no_token = True
+
 	uid = request.GET.get("uid", None)
 	if uid is not None:
 		try:

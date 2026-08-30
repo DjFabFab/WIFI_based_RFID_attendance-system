@@ -96,12 +96,13 @@
 {% block js %}
 <script>
   $(document).ready(function () {
+    function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
     function renderManageRows(users){
       var html='';
       for(var i=0;i<users.length;i++){
         var u=users[i];
         var name = u.name ? u.name : '';
-        html+='<tr><td>'+u.id+'</td><td>'+u.card_id+'</td><td>'+name+'</td></tr>';
+        html+='<tr><td>'+esc(String(u.id))+'</td><td>'+esc(String(u.card_id))+'</td><td>'+esc(name)+'</td></tr>';
       }
       $('#manage').html(html);
     }

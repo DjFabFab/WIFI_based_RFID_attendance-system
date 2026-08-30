@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import re
 import sys
 import time
@@ -28,12 +29,15 @@ UID_LINE_RE = re.compile(r"^[0-9A-Fa-f-]+$")
 MAX_HTTP_ATTEMPTS = 5
 
 
-def forward_uid(api_url, line, timeout=5, max_attempts=MAX_HTTP_ATTEMPTS):
+def forward_uid(api_url, line, token=None, timeout=5, max_attempts=MAX_HTTP_ATTEMPTS):
     """Forward one UID line. True = API accepted it (2xx), False = dropped (4xx or retries exhausted)."""
+    headers = {}
+    if token:
+        headers["X-Bridge-Token"] = token
     for attempt in range(1, max_attempts + 1):
         try:
             encoded = urllib.parse.quote(line)
-            response = requests.get(f"{api_url}?uid={encoded}", timeout=timeout)
+            response = requests.get(f"{api_url}?uid={encoded}", headers=headers, timeout=timeout)
             if response.status_code < 400:
                 logger.info(f"Successfully forwarded UID: {line}")
                 return True
@@ -105,7 +109,10 @@ def main():
     parser.add_argument("--port", default=None, help="Serial port (auto-detect if not given)")
     parser.add_argument("--baud", type=int, default=115200, help="Baud rate")
     parser.add_argument("--api", default="http://127.0.0.1:8000/process/", help="Django API endpoint")
+    parser.add_argument("--token", default=None, help="X-Bridge-Token sent to Django (defaults to $BRIDGE_TOKEN)")
     args = parser.parse_args()
+
+    token = args.token or os.environ.get("BRIDGE_TOKEN")
 
     # Auto-detect the serial port if not explicitly provided
     port = args.port or auto_detect_port(None)
@@ -139,7 +146,7 @@ def main():
                         logger.debug("Skipping non-UID serial line: %r", line)
                         continue
 
-                    forward_uid(args.api, line)
+                    forward_uid(args.api, line, token=token)
 
                 except serial.SerialException as e:
                     logger.error(f"Serial read error: {e}")

@@ -96,6 +96,31 @@ class LegacyCardIdEndpointTests(TestCase):
         self.assertIn(b"auth", resp.content)
 
 
+class ProcessBridgeTokenTests(TestCase):
+    """When BRIDGE_TOKEN is configured, /process/ requires the matching header."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_missing_token_returns_403(self):
+        with patch.dict(os.environ, {"BRIDGE_TOKEN": "sekrit"}):
+            resp = self.client.get("/process/?uid=12-34-56-78")
+        self.assertEqual(resp.status_code, 403)
+        self.assertIn(b"forbidden", resp.content)
+
+    def test_wrong_token_returns_403(self):
+        with patch.dict(os.environ, {"BRIDGE_TOKEN": "sekrit"}):
+            resp = self.client.get(
+                "/process/?uid=12-34-56-78", HTTP_X_BRIDGE_TOKEN="wrong")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_correct_token_allows_request(self):
+        with patch.dict(os.environ, {"BRIDGE_TOKEN": "sekrit"}):
+            resp = self.client.get(
+                "/process/?uid=12-34-56-78", HTTP_X_BRIDGE_TOKEN="sekrit")
+        self.assertEqual(resp.status_code, 200)
+
+
 class PresentEndpointTests(TestCase):
     """Tests for the JSON /present/ endpoint (today's open attendance logs)."""
 
@@ -259,6 +284,21 @@ class ForwardUidTests(TestCase):
             result = rfid_serial_bridge.forward_uid("http://api", self.uid)
         self.assertTrue(result)
         get.assert_called_once()
+
+    def test_token_sent_as_header(self):
+        with patch("rfid_serial_bridge.requests.get", self._get(200)) as get:
+            result = rfid_serial_bridge.forward_uid(
+                "http://api", self.uid, token="sekrit")
+        self.assertTrue(result)
+        _, kwargs = get.call_args
+        self.assertEqual(kwargs["headers"], {"X-Bridge-Token": "sekrit"})
+
+    def test_no_token_sends_no_header(self):
+        with patch("rfid_serial_bridge.requests.get", self._get(200)) as get:
+            result = rfid_serial_bridge.forward_uid("http://api", self.uid)
+        self.assertTrue(result)
+        _, kwargs = get.call_args
+        self.assertEqual(kwargs.get("headers"), {})
 
     def test_4xx_drops_immediately(self):
         with patch("rfid_serial_bridge.requests.get", self._get(400)) as get:

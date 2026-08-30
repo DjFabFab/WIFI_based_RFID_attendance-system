@@ -17,10 +17,19 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
+# Hardening for physically public kiosk (members + occasional public):
+# - --incognito / --no-first-run / --no-default-browser-check : no history/first-run UI
+# - --disable-pinch / --overscroll-history-navigation=0 : block pinch/ swipe escape
+# - --disable-features=Translate : remove translate bubble
+# - --remote-allow-origins restricted to localhost (divera_kiosk.py uses http://127.0.0.1:9222)
+#   so remote CDP cannot be driven from LAN. Keep --remote-debugging-port=9222 for divera_kiosk.
+#   Do NOT expose 9222 beyond 127.0.0.1 (firewall/iptables if needed).
+# Physical lock beyond flags (handled outside this script): labwc should not bind
+# Alt+F4/Ctrl+Shift+I/J, right-click is suppressed by kiosk JS, display auto-dims.
 # Launch Chromium in background so we can verify the page loaded and
 # auto-reload if the first load was blank (race where Chromium fetched
 # before Django was fully ready, even though curl succeeded).
-chromium --kiosk --ozone-platform=wayland --enable-features=WaylandWindowDecorations --remote-debugging-port=9222 --remote-allow-origins=* --noerrdialogs --disable-infobars --disable-session-crashed-bubble --user-data-dir=/home/pi/.config/presency-kiosk "${KIOSK_HOME_URL:-http://127.0.0.1:8000/}" &
+chromium --kiosk --ozone-platform=wayland --enable-features=WaylandWindowDecorations --remote-debugging-port=9222 --remote-allow-origins=http://127.0.0.1:9222 --noerrdialogs --disable-infobars --disable-session-crashed-bubble --incognito --no-first-run --no-default-browser-check --disable-pinch --overscroll-history-navigation=0 --disable-features=Translate --user-data-dir=/home/pi/.config/presency-kiosk "${KIOSK_HOME_URL:-http://127.0.0.1:8000/}" &
 CHROMIUM_PID=$!
 
 # Give Chromium a few seconds to load, then check via CDP if the body is
