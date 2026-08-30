@@ -132,8 +132,37 @@ def _parse_vehicle_fms_mapping(vehicle_status_payload):
         note = item.get("fmsstatus_note") or item.get("note") or ""
         if not isinstance(note, str):
             note = str(note) if note is not None else ""
-        mapping[fid] = {"fms": fms_int, "name": name.strip() or str(fid), "note": note.strip()}
+        ts_raw = item.get("fmsstatus_ts") or item.get("fms_ts") or item.get("ts")
+        ts_int = None
+        if ts_raw not in (None, "", 0, "0"):
+            try:
+                ts_int = int(str(ts_raw).strip())
+                if ts_int > 1e12:
+                    ts_int //= 1000
+            except (ValueError, TypeError):
+                ts_int = None
+        mapping[fid] = {"fms": fms_int, "name": name.strip() or str(fid), "note": note.strip(), "ts": ts_int}
     return mapping
+
+
+def _vehicle_since(ts):
+    if not ts:
+        return ""
+    try:
+        now_ts = int(time.time())
+        diff = now_ts - int(ts)
+        if diff < 0:
+            diff = 0
+        if diff < 60:
+            return f"{diff}s"
+        elif diff < 3600:
+            return f"{round(diff/60)}min"
+        elif diff < 86400:
+            return f"{round(diff/3600)}h"
+        else:
+            return f"{round(diff/86400)}d"
+    except Exception:
+        return ""
 
 
 def _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, status_mapping, active):
@@ -154,7 +183,16 @@ def _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, statu
                     except (ValueError, TypeError):
                         fms_int = None
                     name = v.get("name") or v.get("shortname") or str(fid)
-                    fallback_mapping[fid] = {"fms": fms_int, "name": name, "note": ""}
+                    ts_raw = v.get("fmsstatus_ts") or v.get("ts")
+                    ts_int = None
+                    if ts_raw not in (None, "", 0, "0"):
+                        try:
+                            ts_int = int(str(ts_raw).strip())
+                            if ts_int > 1e12:
+                                ts_int //= 1000
+                        except Exception:
+                            ts_int = None
+                    fallback_mapping[fid] = {"fms": fms_int, "name": name, "note": "", "ts": ts_int}
         if fallback_mapping:
             status_mapping = fallback_mapping
 
@@ -173,7 +211,8 @@ def _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, statu
             label = _FMS_LABELS.get(fms, "—") if fms is not None else "—"
             short = _FMS_SHORT.get(fms, "—") if fms is not None else "—"
             color = _FMS_COLORS.get(fms, "secondary") if fms is not None else "secondary"
-            display.append({"id": vid, "name": vname, "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note","") if entry else ""})
+            since = _vehicle_since(entry.get("ts")) if entry else ""
+            display.append({"id": vid, "name": vname, "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note","") if entry else "", "since": since})
     else:
         if status_mapping:
             for fid, entry in status_mapping.items():
@@ -181,13 +220,14 @@ def _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, statu
                 label = _FMS_LABELS.get(fms, "—") if fms is not None else "—"
                 short = _FMS_SHORT.get(fms, "—") if fms is not None else "—"
                 color = _FMS_COLORS.get(fms, "secondary") if fms is not None else "secondary"
-                display.append({"id": fid, "name": entry.get("name", str(fid)), "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note","")})
+                since = _vehicle_since(entry.get("ts"))
+                display.append({"id": fid, "name": entry.get("name", str(fid)), "fms": fms, "label": label, "short": short, "color": color, "note": entry.get("note",""), "since": since})
             display.sort(key=lambda x: (x["name"] or "").lower())
         else:
             # no mapping: still show vehicle_names with placeholder
             for idx, vid in enumerate(vehicle_ids):
                 name = vehicle_names[idx] if idx < len(vehicle_names) else str(vid)
-                display.append({"id": vid, "name": name, "fms": None, "label": "—", "short": "—", "color": "secondary", "note": ""})
+                display.append({"id": vid, "name": name, "fms": None, "label": "—", "short": "—", "color": "secondary", "note": "", "since": ""})
     return display
 
 
