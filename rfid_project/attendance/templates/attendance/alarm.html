@@ -13,7 +13,7 @@ nav.navbar{display:none !important}
 /* grid */
 .alarm-grid{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
 .alarm-row{display:grid;gap:6px}
-.alarm-hero{grid-template-columns:1.6fr .85fr 1.05fr}
+.alarm-hero{grid-template-columns:1.75fr .60fr 1.05fr}
 .alarm-row2{grid-template-columns:0.85fr 1.8fr 0.85fr}
 .alarm-row3{grid-template-columns:1fr 1fr}
 .alarm-row4{grid-template-columns:1fr 1fr}
@@ -100,9 +100,9 @@ nav.navbar{display:none !important}
         <div class="alarm-tile-label">Alarm</div>
         <div id="alarm-title" class="alarm-tile-value">{% if title %}{{ title }}{% if not active and closed %} <span class="alarm-closed-hint">(geschlossen)</span>{% endif %}{% else %}—{% endif %}</div>
       </div>
-      <div id="alarm-prio-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
-        <div class="alarm-tile-label">Priorität</div>
-        <div id="alarm-priority" class="alarm-tile-value">{% if active and priority %}Ja{% else %}—{% endif %}</div>
+      <div id="alarm-sonderrechte-tile" class="alarm-tile {% if active and priority %}alarm-tile-prio active-dot{% else %}alarm-idle{% endif %}">
+        <div class="alarm-tile-label">Sonderrechte</div>
+        <div id="alarm-sonderrechte" class="alarm-tile-value">{% if title %}{% if priority %}Ja{% else %}Nein{% endif %}{% else %}—{% endif %}</div>
       </div>
       <div class="alarm-tile alarm-tile-stand">
         <div class="alarm-tile-label">Stand</div>
@@ -163,9 +163,9 @@ nav.navbar{display:none !important}
   function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
   function renderAlarm(d){
     var heroTile=document.getElementById('alarm-hero-tile');
-    var prioTile=document.getElementById('alarm-prio-tile');
+    var prioTile=document.getElementById('alarm-sonderrechte-tile') || document.getElementById('alarm-prio-tile');
     var titleEl=document.getElementById('alarm-title');
-    var prioEl=document.getElementById('alarm-priority');
+    var prioEl=document.getElementById('alarm-sonderrechte') || document.getElementById('alarm-priority');
     var standEl=document.getElementById('alarm-stand');
     var addrEl=document.getElementById('alarm-address');
      var vehEl=document.getElementById('alarm-vehicles');
@@ -211,8 +211,9 @@ nav.navbar{display:none !important}
       }
     }
     if(prioTile){
-      prioTile.className = 'alarm-tile ' + (active && d.priority ? 'alarm-tile-prio active-dot' : 'alarm-idle');
-      if(prioEl) prioEl.textContent = (active && d.priority) ? 'Ja' : '—';
+      if(active && d.priority){ prioTile.className = 'alarm-tile alarm-tile-prio active-dot'; }
+      else { prioTile.className = 'alarm-tile alarm-idle'; }
+      if(prioEl) prioEl.textContent = d.title ? (d.priority ? 'Ja' : 'Nein') : '—';
     }
     if(addrEl){
       if(active && d.address){ addrEl.textContent = d.address; }

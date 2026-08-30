@@ -330,7 +330,7 @@ class AlarmViewTests(TestCase):
         content = resp.content.decode()
         self.assertIn("Testalarm", content)
         self.assertIn("LF 10", content)
-        self.assertIn("Priorit", content)
+        self.assertIn("Sonderrechte", content)
         self.assertIn("no-store", resp["Cache-Control"])
         self.assertGreaterEqual(mock_get.call_count, 1)
         self.assertIn("Fahrzeugstatus", content)
