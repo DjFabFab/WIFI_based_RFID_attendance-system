@@ -17,16 +17,16 @@
           <form class="manage-actions" action="/cardselect/" method="post">
             {% csrf_token %}
             <div style="width:100%; flex:1 1 auto;">
-              <label for="inlineFormInputName2" class="manage-field-label">ID auswählen</label>
-              <select name="idsearch" class="manage-select" id="inlineFormInputName2" required>
+              <label for="inlineFormInputName2" class="manage-field-label" title="Interne Nutzer-ID auswählen">ID auswählen</label>
+              <select name="idsearch" class="manage-select" id="inlineFormInputName2" required title="Nutzer aus Liste wählen">
                 <option value="" disabled selected>— Bitte wählen —</option>
                 {% for user in users %}
-                  <option value="{{ user.id }}">{% if user.name %}{{ user.name }}{% else %}{{ user.id }}{% endif %}</option>
+                  <option value="{{ user.id }}" title="ID {{ user.id }} — Card {{ user.card_id }}{% if user.name %} — {{ user.name }}{% endif %}">{% if user.name %}{{ user.name }}{% else %}{{ user.id }}{% endif %}</option>
                 {% endfor %}
               </select>
             </div>
-            <button type="submit" name="sel" class="btn btn-warning" value="Auswählen">Auswählen</button>
-            <button type="submit" name="del" class="btn btn-danger" value="Entfernen">Entfernen</button>
+            <button type="submit" name="sel" class="btn btn-warning" value="Auswählen" title="Ausgewählten Nutzer zum Bearbeiten laden">Auswählen</button>
+            <button type="submit" name="del" class="btn btn-danger" value="Entfernen" title="Nutzerdaten löschen — Karte bleibt erhalten">Entfernen</button>
           </form>
 
           {% if messages %}
@@ -59,11 +59,11 @@
             <input type="hidden" name="selected_card_id" id="selected_card_id" value="{% if selected_user %}{{ selected_user.id }}{% endif %}">
 
             <div>
-              <label for="name" class="manage-field-label">Name</label>
-              <input type="text" name="name" class="form-control" id="name" placeholder="Name eingeben">
+              <label for="name" class="manage-field-label" title="Nutzername für ausgewählte Karte">Name</label>
+              <input type="text" name="name" class="form-control" id="name" placeholder="Name eingeben" title="Neuen Namen eingeben">
             </div>
 
-            <button type="submit" class="btn btn-warning">Speichern</button>
+            <button type="submit" class="btn btn-warning" title="Namen für ausgewählten Nutzer speichern">Speichern</button>
           </form>
         </div>
 
@@ -76,9 +76,9 @@
           <table class="manage-table">
             <thead>
               <tr>
-                <th>ID.No</th>
-                <th>CardID</th>
-                <th>Name</th>
+                <th title="Interne Datenbank-ID (Primärschlüssel)">ID.No</th>
+                <th title="RFID Karten-ID (dezimal, von PN532)">CardID</th>
+                <th title="Nutzername">Name</th>
               </tr>
             </thead>
             <tbody id="manage" class="manage">

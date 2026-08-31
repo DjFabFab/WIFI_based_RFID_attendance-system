@@ -20,9 +20,9 @@
   --kiosk-border:        #2b3340;   /* hairlines                          */
 
   /* text */
-  --kiosk-text:          #eef2f8;   /* primary text (hi-contrast)         */
-  --kiosk-text-soft:     #b6bfd0;   /* secondary text                     */
-  --kiosk-text-muted:    #8a94a8;   /* muted / labels                     */
+  --kiosk-text:          #eef2f8;
+  --kiosk-text-soft:     #c2d0de;
+  --kiosk-text-muted:    #a8b8c8;
 
   /* accents (tuned for dark backgrounds, WCAG-friendly) */
   --kiosk-accent:        #4d8dff;   /* links / focus / info               */
@@ -560,10 +560,12 @@ body.kiosk-dimmed .kiosk-wake-hint {
   letter-spacing: .005em;
 }
 .kiosk-empty-state .empty-hint {
-  font-size: .9rem;
+  font-size: .95rem;
   color: var(--kiosk-text-muted);
   margin: 0;
   font-weight: 400;
+  font-style: italic;
+  line-height: 1.35;
 }
 
 /* Table container — rounded, bordered, scrollable, dark. */
@@ -611,25 +613,27 @@ body.kiosk-dimmed .kiosk-wake-hint {
   top: 0;
   z-index: 2;
   background: var(--kiosk-surface-2);
-  font-size: .72rem;
-  font-weight: 600;
+  font-size: .76rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: .07em;
   color: var(--kiosk-text-muted);
   border-bottom: 1px solid var(--kiosk-border);
   border-top: 0;
-  padding: .7rem .9rem;
+  padding: .75rem .9rem;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 #cards-table td {
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: var(--kiosk-text);
   border-top: 1px solid var(--kiosk-border);
   padding: 0 .9rem;
-  height: 52px;
+  height: 54px;
   vertical-align: middle;
   background: transparent;
+  line-height: 1.35;
 }
 
 #cards-table tbody tr {
@@ -835,9 +839,18 @@ body.kiosk-dimmed .kiosk-wake-hint {
   box-shadow: 0 0 0 .2rem rgba(77, 141, 255, .25);
   outline: none;
 }
+.manage-select:invalid {
+  color: var(--kiosk-text-muted);
+  font-style: italic;
+}
+.manage-select option[disabled] {
+  font-style: italic;
+  color: var(--kiosk-text-muted);
+}
 .manage-select option {
   background: var(--kiosk-surface);
   color: var(--kiosk-text);
+  font-style: normal;
 }
 
 /* Button row inside the left panel — stacked: select 100%, then two buttons 50/50 */
@@ -915,7 +928,6 @@ body.kiosk-dimmed .kiosk-wake-hint {
   flex: 0 0 8px;
 }
 
-/* Empty state inside the edit panel before a user is chosen */
 .manage-edit-empty {
   flex: 1 1 auto;
   display: flex;
@@ -923,7 +935,7 @@ body.kiosk-dimmed .kiosk-wake-hint {
   justify-content: center;
   text-align: center;
   color: var(--kiosk-text-muted);
-  font-size: .95rem;
+  font-size: .98rem;
   font-weight: 600;
   letter-spacing: .03em;
   padding: 1rem;
@@ -931,6 +943,8 @@ body.kiosk-dimmed .kiosk-wake-hint {
   border-radius: var(--kiosk-radius);
   background: rgba(0, 0, 0, .15);
   min-height: calc(var(--kiosk-touch) * 1.4);
+  font-style: italic;
+  line-height: 1.35;
 }
 
 /* Toast-style feedback message — compact pill, not a full alert */
@@ -998,29 +1012,31 @@ body.kiosk-dimmed .kiosk-wake-hint {
   position: sticky;
   top: 0;
   z-index: 1;
-  font-size: .85rem;
+  font-size: .88rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--kiosk-text);
   background: var(--kiosk-surface-2);
   border-bottom: 2px solid var(--kiosk-border);
-  padding: .55rem .8rem;
+  padding: .6rem .8rem;
   text-align: left;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .manage-table tbody td {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--kiosk-text);
   border-top: 1px solid var(--kiosk-border);
-  padding: .55rem .8rem;
+  padding: .6rem .8rem;
   vertical-align: middle;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 0;             /* enables ellipsis in flex-like table cells */
+  max-width: 0;
+  line-height: 1.35;
 }
 
 .manage-table tbody tr {

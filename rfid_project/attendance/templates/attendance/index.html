@@ -15,20 +15,39 @@
     <p class="empty-hint">Bitte Token vorhalten</p>
   </div>
 
-  <div class="kiosk-table-wrap" id="cards-wrap" hidden>
-    <div class="kiosk-table-scroll">
-      <table class="table" id="cards-table" aria-label="Anwesenheitsliste">
-        <thead>
-          <tr>
-            <th class="col-name">Name</th>
-            <th class="col-date">Datum</th>
-            <th class="col-delete" title="Löschen">Löschen</th>
-          </tr>
-        </thead>
-        <tbody id="cards" class="cards"></tbody>
-      </table>
+    <div class="kiosk-table-wrap" id="cards-wrap" hidden>
+        <h3 class="mt-4">Registrierte Benutzer</h3>
+        <table class="table" id="registered-table">
+            <thead>
+                <tr>
+                    <th title="Nutzername">Name</th>
+                    <th title="RFID Karten-ID (dezimal)">Card ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in registered_users %}
+                <tr>
+                    <td>{{ u.name }}</td>
+                    <td>{{ u.card_id }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <h3 class="mt-4">Anwesend</h3>
+        <div class="kiosk-table-scroll">
+            <table class="table" id="cards-table" aria-label="Anwesenheitsliste">
+                <thead>
+                    <tr>
+                        <th class="col-name" title="Nutzername">Name</th>
+                        <th class="col-date" title="Anwesenheitsdatum (TT.MM.JJJJ)">Datum</th>
+                        <th class="col-delete" title="Eintrag löschen — zweistufige Bestätigung">Löschen</th>
+                    </tr>
+                </thead>
+                <tbody id="cards" class="cards"></tbody>
+            </table>
+        </div>
     </div>
-  </div>
 </div>
 {{ initial_present_json|json_script:"initial-present" }}
 {% endblock %}
@@ -50,13 +69,17 @@
     function renderPresent(data) {
       var rows = data || [];
       var $cards = $('#cards').empty();
-      if (!rows.length) {
+      
+      // Update empty state only if no registered users AND no present logs
+      var hasRegistered = {% if registered_users|length > 0 %}true{% else %}false{% endif %};
+      if (!rows.length && !hasRegistered) {
         $('#empty-state').prop('hidden', false);
         $('#cards-wrap').prop('hidden', true);
         return;
       }
       $('#empty-state').prop('hidden', true);
       $('#cards-wrap').prop('hidden', false);
+      
       $.each(rows, function (i, entry) {
         var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
         var $tr = $('<tr>');
