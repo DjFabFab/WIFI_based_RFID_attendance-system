@@ -2,6 +2,11 @@ import os
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, Mock, patch
 
+from django.test import client as django_test_client
+def _dummy_store_rendered_templates(*args, **kwargs):
+    pass
+django_test_client.store_rendered_templates = _dummy_store_rendered_templates
+
 import divera_kiosk
 import rfid_serial_bridge
 from django.test import TestCase, Client

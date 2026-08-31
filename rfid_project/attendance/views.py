@@ -944,12 +944,13 @@ def search(request):
 
 
 def index(request):
-	logs = Log.objects.filter(date=datetime.date.today(), time_out__isnull=True).order_by('-id')
+	logs = Log.objects.filter(date=datetime.date.today(), time_out__isnull=True).order_by('-id').only("name", "card_id", "date")
 	present = [{'name': log.name, 'card_id': log.card_id, 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
-	students = Student.objects.all().order_by('-id')
+	students = Student.objects.all().order_by('-id').only("id", "card_id", "name")
 	registered = [{'name': s.name or str(s.card_id), 'card_id': s.card_id} for s in students]
 	resp = render(request, 'attendance/index.html', {'initial_present_json': json.dumps(present), 'initial_present': present, 'registered_users': registered})
 	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
+	resp["Pragma"] = "no-cache"
 	return resp
 
 
@@ -1045,7 +1046,7 @@ def manage1(request):
 
 
 def manage(request):
-	users = Student.objects.order_by('-id')
+	users = Student.objects.order_by('-id').only("id", "card_id", "name")
 	selected_id = request.session.get('selected_card_id')
 	selected_user = Student.objects.filter(id=selected_id).first() if selected_id else None
 	initial_manage = [{'id': u.id, 'card_id': u.card_id, 'name': u.name or ''} for u in users[:50]]
@@ -1125,7 +1126,7 @@ def edit(request):
 
 def present(request):
 	logs = Log.objects.filter(
-		date=datetime.date.today(), time_out__isnull=True).order_by('-id')
+		date=datetime.date.today(), time_out__isnull=True).order_by('-id').only("name", "card_id", "date")
 	data = [{'name': log.name, 'card_id': log.card_id,
 			 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
 	resp = JsonResponse(data, safe=False)

@@ -7,6 +7,11 @@
 # Log into https://www.divera247.com/ once in the kiosk profile
 # (~/.config/presency-kiosk) so the dashboard shows member statuses.
 #
+if pgrep -x chromium >/dev/null 2>&1; then
+  echo "Chromium already running, exiting"
+  exit 0
+fi
+
 # Wait for Django to be ready before launching Chromium — otherwise the
 # kiosk shows a blank <body> until a manual F5 (server takes ~5s to start
 # after reboot, while labwc/Chromium starts immediately via autostart).
