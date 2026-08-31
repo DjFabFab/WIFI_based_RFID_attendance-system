@@ -573,8 +573,7 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
                                     for uid, udata in monitor_users.items():
                                         if int(uid) in responded_user_ids and str(udata.get("status", "")) == str(sid):
                                             count += 1
-                                    if count:
-                                        status_counts[str(sid)] = count
+                                    status_counts[str(sid)] = count
                                 else:
                                     status_counts[str(sid)] = all_cnt
                     _available_colors = {"success", "primary", "info", "warning"}
@@ -886,11 +885,11 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
         vehicle_status_display = _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, vehicle_fms_map, active)
         if not vehicle_names and isinstance(payload.get('data'), dict):
             data2 = payload.get('data')
-            cluster2 = data2.get('cluster')
-            if isinstance(cluster2, dict):
-                v_map2 = cluster2.get('vehicle')
-                if isinstance(v_map2, dict):
-                    vehicle_names = [v.get('name') or str(vid) for vid, v in v_map2.items()]
+            cluster = data2.get('cluster')
+            if isinstance(cluster, dict):
+                v_map = cluster.get('vehicle')
+                if isinstance(v_map, dict):
+                    vehicle_names = [v.get('name') or str(vid) for vid, v in v_map.items()]
 
         return {
             "active": active,
