@@ -14,7 +14,10 @@
 
   var idleTimer = null;
 
+  window.kioskInhibitDim = false;
+
   function dim() {
+    if (window.kioskInhibitDim || document.documentElement.dataset.alarmActive === "1") return;
     document.body.classList.add('kiosk-dimmed');
   }
 
@@ -29,8 +32,13 @@
     if (idleTimer) {
       clearTimeout(idleTimer);
     }
+    if (window.kioskInhibitDim || document.documentElement.dataset.alarmActive === "1") return;
     idleTimer = setTimeout(dim, IDLE_TIMEOUT_MS);
   }
+
+  window.kioskWake = wake;
+  window.wake = wake;
+  window.kioskSetAlarmActive = function(a){ window.kioskInhibitDim=!!a; document.documentElement.dataset.alarmActive = a?"1":"0"; if(a) wake(); };
 
   /* A browser tab that is hidden does not fire pointer events; re-arm the
      timer when the kiosk tab becomes visible again. */

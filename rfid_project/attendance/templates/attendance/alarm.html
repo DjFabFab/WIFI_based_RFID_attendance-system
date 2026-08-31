@@ -209,6 +209,14 @@ nav.navbar{display:none !important}
     }
     var active = !!d.active;
     var closed = !!d.closed;
+    if (active) {
+      if (window.kioskSetAlarmActive) window.kioskSetAlarmActive(true);
+      else if (window.kioskWake) window.kioskWake();
+      try { document.documentElement.dataset.alarmActive="1"; if (window.wake) window.wake(); } catch(e){}
+    } else {
+      if (window.kioskSetAlarmActive) window.kioskSetAlarmActive(false);
+      else document.documentElement.dataset.alarmActive="0";
+    }
     if(heroTile){
       if(d.title){
         if(active){ heroTile.className = 'alarm-tile alarm-tile-hero active-dot'; }

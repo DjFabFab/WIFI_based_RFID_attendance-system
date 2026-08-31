@@ -21,7 +21,7 @@ class Log(models.Model):
     ida = models.IntegerField(default=0)
     card_id = models.BigIntegerField()
     name = models.CharField(max_length=50)
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(default=timezone.now, db_index=True)
     time_in = models.TimeField(default=timezone.now)
     time_out = models.TimeField(blank=True, null=True)
     status = models.TextField(max_length=100)

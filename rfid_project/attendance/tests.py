@@ -7,6 +7,7 @@ import rfid_serial_bridge
 from django.test import TestCase, Client
 from attendance.models import Student, Log
 from attendance.uid_utils import preprocess_uid
+from attendance.views import get_alarm_display
 
 
 class PreprocessUidTests(TestCase):
@@ -481,3 +482,33 @@ class AlarmViewTests(TestCase):
         resp = self.client.post("/alarm/")
         self.assertEqual(resp.status_code, 405)
         self.assertIn("Method Not Allowed", resp.content.decode())
+
+
+class GetAlarmDisplayTests(TestCase):
+    def test_alarm_status_filtering_active_alarm(self):
+        payload = {
+            "success": True,
+            "data": {
+                "alarm": {"items": [{"id": 1, "closed": False, "title": "Active Alarm", "responders": [101]}]},
+                "monitor": {
+                    "1": {"78645": {"all": 1}},
+                    "3": {"101": {"status": "78645"}}
+                },
+                "cluster": {"consumer": {"101": {"firstname": "Test", "lastname": "User"}}}
+            }
+        }
+        result = get_alarm_display(payload)
+        self.assertIn("status_display", result)
+        self.assertEqual(result["status_counts"].get("78645"), 1)
+
+    def test_vehicle_name_resolution_empty_vehicles(self):
+        payload = {
+            "success": True,
+            "data": {
+                "alarm": {"items": [{"id": 1, "closed": False, "title": "Active Alarm", "vehicle": []}]},
+                "cluster": {"vehicle": {"68687": {"name": "LF 10"}}}
+            }
+        }
+        result = get_alarm_display(payload)
+        self.assertIn("vehicle_names", result)
+        self.assertEqual(result["vehicle_names"], ["LF 10"])

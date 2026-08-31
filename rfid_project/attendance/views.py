@@ -567,7 +567,16 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
                         if isinstance(sdata, dict):
                             all_cnt = sdata.get("all", 0)
                             if all_cnt:
-                                status_counts[str(sid)] = all_cnt
+                                if active:
+                                    count = 0
+                                    monitor_users = data.get("monitor", {}).get("3", {})
+                                    for uid, udata in monitor_users.items():
+                                        if int(uid) in responded_user_ids and str(udata.get("status", "")) == str(sid):
+                                            count += 1
+                                    if count:
+                                        status_counts[str(sid)] = count
+                                else:
+                                    status_counts[str(sid)] = all_cnt
                     _available_colors = {"success", "primary", "info", "warning"}
                     _monitor_color_map = {"78645": "success", "78646": "warning", "78647": "danger", "78650": "primary", "79817": "secondary", "86776": "dark"}
                     default_role_map = {"AGT": [2], "MA": [62], "GF": [3, 4], "ABC": [26]}
@@ -875,6 +884,13 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
             if inline:
                 vehicle_fms_map = inline
         vehicle_status_display = _build_vehicle_status_display(vehicle_ids, vehicle_names, vehicle_map, vehicle_fms_map, active)
+        if not vehicle_names and isinstance(payload.get('data'), dict):
+            data2 = payload.get('data')
+            cluster2 = data2.get('cluster')
+            if isinstance(cluster2, dict):
+                v_map2 = cluster2.get('vehicle')
+                if isinstance(v_map2, dict):
+                    vehicle_names = [v.get('name') or str(vid) for vid, v in v_map2.items()]
 
         return {
             "active": active,
@@ -929,8 +945,10 @@ def search(request):
 
 def index(request):
 	logs = Log.objects.filter(date=datetime.date.today(), time_out__isnull=True).order_by('-id')
-	initial = [{'name': log.name, 'card_id': log.card_id, 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
-	resp = render(request, 'attendance/index.html', {'initial_present_json': json.dumps(initial), 'initial_present': initial})
+	present = [{'name': log.name, 'card_id': log.card_id, 'date': log.date.strftime('%d.%m.%Y')} for log in logs]
+	students = Student.objects.all().order_by('-id')
+	registered = [{'name': s.name or str(s.card_id), 'card_id': s.card_id} for s in students]
+	resp = render(request, 'attendance/index.html', {'initial_present_json': json.dumps(present), 'initial_present': present, 'registered_users': registered})
 	resp["Cache-Control"] = "no-store, no-cache, must-revalidate"
 	return resp
 

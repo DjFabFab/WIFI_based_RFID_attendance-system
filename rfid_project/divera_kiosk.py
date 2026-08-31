@@ -23,6 +23,7 @@ Chromium must be started with ``--remote-debugging-port=9222`` (see
 
 import logging
 import os
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -152,6 +153,14 @@ def find_home_target(targets, home_url):
     return None
 
 
+def cdp_find_tab_by_url(cfg, url):
+    """Return the existing page target whose url exactly matches ``url``."""
+    for target in cdp_list_targets(cfg):
+        if target.get("type") == "page" and target.get("url") == url:
+            return target
+    return None
+
+
 def cdp_open_tab(cfg, url):
     """Open ``url`` in a new tab; return its target id or None."""
     try:
@@ -193,6 +202,32 @@ def cdp_activate_tab(cfg, target_id):
         return False
 
 
+def wake_screen():
+    """Try OS-level screen wake commands; never raise.
+
+    Attempts X11/Wayland wake helpers via subprocess; each invocation is
+    wrapped in try/except and logs on failure without propagating.
+    """
+    # X11: reset screensaver and force DPMS on
+    for cmd in (
+        ["xset", "s", "reset"],
+        ["xset", "dpms", "force", "on"],
+    ):
+        try:
+            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("wake_screen %s failed: %s", " ".join(cmd), exc)
+    # Wayland / generic fallbacks — try each, ignore failures
+    for cmd in (
+        ["wlr-randr", "--output", "--on"],
+        ["xdg-screensaver", "reset"],
+    ):
+        try:
+            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("wake_screen %s failed: %s", " ".join(cmd), exc)
+
+
 def run(cfg):
     """Main state machine loop: home -> divera (until deadline) -> home."""
     state = "home"
@@ -207,8 +242,15 @@ def run(cfg):
         if state == "home":
             if active:
                 log.info("Active alarm detected, opening Divera tab")
-                divera_target_id = cdp_open_tab(cfg, cfg["divera_page_url"])
+                existing_target = cdp_find_tab_by_url(cfg, cfg["divera_page_url"])
+                if existing_target is not None:
+                    divera_target_id = existing_target["id"]
+                    cdp_activate_tab(cfg, divera_target_id)
+                    log.info("Divera tab already open; activating...")
+                else:
+                    divera_target_id = cdp_open_tab(cfg, cfg["divera_page_url"])
                 if divera_target_id is not None:
+                    wake_screen()
                     deadline = now + cfg["alarm_visible_seconds"]
                     last_id = newest_id
                     state = "divera"
@@ -224,6 +266,7 @@ def run(cfg):
             ):
                 last_id = newest_id
                 deadline = now + cfg["alarm_visible_seconds"]
+                wake_screen()
                 log.info("New alarm detected; extended Divera window")
             if now >= deadline:
                 cdp_close_tab(cfg, divera_target_id)
