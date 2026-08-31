@@ -15,9 +15,13 @@
     <p class="empty-hint">Bitte Token vorhalten</p>
   </div>
 
-    <div class="kiosk-table-wrap" id="cards-wrap" hidden>
-        <h3 class="mt-4">Registrierte Benutzer</h3>
-        <table class="table" id="registered-table">
+    <div id="cards-wrap" hidden>
+      <div class="kiosk-table-wrap">
+        <div class="kiosk-table-header">
+          <h3 class="kiosk-table-title">Registrierte Benutzer</h3>
+        </div>
+        <div class="kiosk-table-scroll">
+          <table class="table" id="registered-table" aria-label="Registrierte Benutzer">
             <thead>
                 <tr>
                     <th title="Nutzername">Name</th>
@@ -31,10 +35,17 @@
                     <td>{{ u.card_id }}</td>
                 </tr>
                 {% endfor %}
+                {% if not registered_users %}
+                <tr><td colspan="2" class="kiosk-empty-row">Keine registrierten Benutzer</td></tr>
+                {% endif %}
             </tbody>
-        </table>
-        
-        <h3 class="mt-4">Anwesend</h3>
+          </table>
+        </div>
+      </div>
+      <div class="kiosk-table-wrap">
+        <div class="kiosk-table-header">
+          <h3 class="kiosk-table-title">Anwesend</h3>
+        </div>
         <div class="kiosk-table-scroll">
             <table class="table" id="cards-table" aria-label="Anwesenheitsliste">
                 <thead>
@@ -47,6 +58,7 @@
                 <tbody id="cards" class="cards"></tbody>
             </table>
         </div>
+      </div>
     </div>
 </div>
 {{ initial_present_json|json_script:"initial-present" }}
@@ -80,6 +92,12 @@
       $('#empty-state').prop('hidden', true);
       $('#cards-wrap').prop('hidden', false);
       
+      if (!rows.length) {
+        var $tr = $('<tr>');
+        $('<td colspan="3" class="kiosk-empty-row">').text('Keine anwesenden Nutzer').appendTo($tr);
+        $tr.appendTo($cards);
+        return;
+      }
       $.each(rows, function (i, entry) {
         var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
         var $tr = $('<tr>');
