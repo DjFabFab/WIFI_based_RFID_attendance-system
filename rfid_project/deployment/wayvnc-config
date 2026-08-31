@@ -1,20 +1,18 @@
-# WayVNC config for Presency kiosk (Pi: rfid-monitor, labwc + chromium kiosk)
-# Install:
-#   mkdir -p ~/.config/wayvnc
-#   cp rfid_project/deployment/wayvnc-config ~/.config/wayvnc/config
-#   # or system-wide: sudo cp rfid_project/deployment/wayvnc-config /etc/wayvnc/config
-#   systemctl --user restart wayvnc  # or sudo systemctl restart wayvnc
+# WayVNC throttling for Presency kiosk (Pi: rfid-monitor, labwc + chromium kiosk)
+# NOTE: wayvnc -f/--max-fps is a *command-line* flag, not a config-file key.
+# The file /etc/wayvnc/config on the Pi must stay the stock auth config:
+#   use_relative_paths=true / address=:: / enable_auth=true / enable_pam=true / ...
+# Do NOT copy this file to /etc/wayvnc/config (max-fps would fail to parse).
+# Instead, patch /usr/sbin/wayvnc-run.sh to add --max-fps 15 (see install-rpi.sh).
+# This file is just documentation/reference for the intended throttling.
 #
-# This throttles the software encoder on Pi 3 to 15 fps (default 30) so the
-# infinite kiosk-pulse animation and 1 Hz clock do not saturate a core.
-# Pair with compositor-friendly CSS (transform/opacity pulse, background-attachment:scroll)
-# for full mitigation. Damage tracking is inherent via wlr-screencopy; capping fps
+# Why 15 fps: Pi 3 software VNC encode saturates at 30 fps with the infinite
+# kiosk-pulse animation + 1 Hz clock (WayVNC damage @60fps → 100% CPU on home).
+# Pair with kiosk.css transform/opacity pulse + background-attachment:scroll for
+# full mitigation. Damage tracking is inherent via wlr-screencopy; capping fps
 # limits encode frequency even when damage is continuous.
+# See: wayvnc.scd — -f/--max-fps (default 30)
 #
-# See: https://github.com/any1/wayvnc (wayvnc.scd) — -f/--max-fps, config key max-fps
-address=0.0.0.0
-port=5900
-
-# Throttle capture/encode to 15 fps (Pi 3 software encoding). Default is 30.
-# 15 fps keeps clock/animations smooth enough for kiosk while halving CPU.
-max-fps=15
+# Intended wayvnc invocation (after install-rpi.sh patch):
+#   wayvnc --detached --gpu --max-fps 15 --config /etc/wayvnc/config --socket /tmp/wayvnc/wayvncctl.sock
+reference_max_fps=15

@@ -110,12 +110,34 @@ EOF
 # WayVNC — throttle software encoder to 15 fps on Pi 3 (home dashboard pulse fix)
 # Pairs with kiosk.css transform/opacity pulse (A). Without this, WayVNC defaults
 # to 30 fps and encodes every pulse frame at 60fps damage → 100% CPU.
+# NOTE: --max-fps is a command-line flag, not a /etc/wayvnc/config key.
+# Patch the Pi's launcher /usr/sbin/wayvnc-run.sh to add --max-fps 15.
+if grep -q -- '--max-fps' /usr/sbin/wayvnc-run.sh 2>/dev/null; then
+  echo "wayvnc-run.sh already throttled"
+else
+  sudo sed -i '/^wayvnc --detached/a --max-fps 15 \\' /usr/sbin/wayvnc-run.sh 2>/dev/null || \
+  sudo tee /usr/sbin/wayvnc-run.sh > /dev/null <<'EOS_WAYVNC'
+#!/bin/sh
+. /etc/default/keyboard
+export XDG_RUNTIME_DIR=/tmp/wayvnc
+mkdir -p "$XDG_RUNTIME_DIR"
+export XKB_DEFAULT_MODEL="$XKBMODEL"
+export XKB_DEFAULT_LAYOUT="$XKBLAYOUT"
+SELF_PID=$$
+{
+	while ! wayvncctl --socket=/tmp/wayvnc/wayvncctl.sock version >/dev/null 2>&1; do sleep 0.1; done
+	systemd-notify --ready --pid=$SELF_PID
+} &
+if ! raspi-config nonint is_pifive ; then export WAYVNC_CMA=/dev/dma_heap/linux,cma; fi
+wayvnc --detached --gpu --max-fps 15 --config /etc/wayvnc/config --socket /tmp/wayvnc/wayvncctl.sock
+EOS_WAYVNC
+  sudo chmod +x /usr/sbin/wayvnc-run.sh
+  sudo pkill wayvnc 2>/dev/null; sleep 2; sudo systemctl restart wayvnc 2>/dev/null || sudo -u vnc /usr/sbin/wayvnc-run.sh 2>/dev/null &
+fi
 RFID_DIR=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
-mkdir -p /home/pi/.config/wayvnc
-cp "$RFID_DIR/deployment/wayvnc-config" /home/pi/.config/wayvnc/config
-# If using system-wide config: sudo mkdir -p /etc/wayvnc && sudo cp "$RFID_DIR/deployment/wayvnc-config" /etc/wayvnc/config
-# WayVNC reads ~/.config/wayvnc/config on next start; restart if already running:
-# systemctl --user restart wayvnc 2>/dev/null || sudo systemctl restart wayvnc 2>/dev/null || pkill -HUP wayvnc || true
+# Keep reference doc for throttling (not a real wayvnc config):
+mkdir -p /home/pi/.config/wayvnc 2>/dev/null || true
+cp "$RFID_DIR/deployment/wayvnc-config" /home/pi/.config/wayvnc/wayvnc-reference 2>/dev/null || true
 
 RFID_DIR=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
 sudo cp "$RFID_DIR/deployment/divera-kiosk.service" /etc/systemd/system/

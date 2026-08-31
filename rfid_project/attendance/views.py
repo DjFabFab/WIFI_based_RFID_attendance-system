@@ -305,13 +305,13 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
         if not isinstance(items, list):
             return dict(idle)
         alarms = [a for a in items if isinstance(a, dict)]
+        _is_idle_no_alarm = False
         if not alarms:
-            # No alarm in payload: inject dummy closed alarm so downstream
-            # monitor/cluster parsing still runs (status/crew/roles) and the
-            # dashboard never looks completely empty - vehicle_status_display
-            # already comes from _early_map. Dummy has closed=True => active=False.
+            _is_idle_no_alarm = True
             alarms = [{"id": 0, "closed": True, "title": "", "priority": False, "address": ""}]
         active = any(not a.get("closed") for a in alarms)
+        if _is_idle_no_alarm:
+            active = False
         active_alarms = [a for a in alarms if not a.get("closed")]
         candidates = active_alarms if active_alarms else alarms
 
@@ -394,7 +394,11 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
             closed = bool(closed_raw)
         else:
             closed = None
-        alarm_id = selected.get("id")
+        if _is_idle_no_alarm:
+            closed = None
+            alarm_id = None
+        else:
+            alarm_id = selected.get("id")
         if not isinstance(alarm_id, int):
             try:
                 alarm_id = int(alarm_id) if alarm_id not in (None, "") else None
@@ -905,7 +909,7 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
             "priority": priority,
             "duration": duration,
             "date": date_val,
-            "closed": closed if closed is not None else bool(selected.get("closed")),
+            "closed": None if _is_idle_no_alarm else (closed if closed is not None else bool(selected.get("closed"))),
             "id": alarm_id,
             "vehicle_ids": vehicle_ids,
             "group_ids": group_ids,
