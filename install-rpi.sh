@@ -107,6 +107,16 @@ EOF
 #    (~/.config/presency-kiosk) so the dashboard shows member statuses.
 #
 # 3. Install the switcher launcher and service, then enable/start it:
+# WayVNC — throttle software encoder to 15 fps on Pi 3 (home dashboard pulse fix)
+# Pairs with kiosk.css transform/opacity pulse (A). Without this, WayVNC defaults
+# to 30 fps and encodes every pulse frame at 60fps damage → 100% CPU.
+RFID_DIR=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
+mkdir -p /home/pi/.config/wayvnc
+cp "$RFID_DIR/deployment/wayvnc-config" /home/pi/.config/wayvnc/config
+# If using system-wide config: sudo mkdir -p /etc/wayvnc && sudo cp "$RFID_DIR/deployment/wayvnc-config" /etc/wayvnc/config
+# WayVNC reads ~/.config/wayvnc/config on next start; restart if already running:
+# systemctl --user restart wayvnc 2>/dev/null || sudo systemctl restart wayvnc 2>/dev/null || pkill -HUP wayvnc || true
+
 RFID_DIR=/home/pi/WIFI_based_RFID_attendance-system/rfid_project
 sudo cp "$RFID_DIR/deployment/divera-kiosk.service" /etc/systemd/system/
 sudo cp "$RFID_DIR/deployment/kiosk-browser.sh" /usr/local/bin/

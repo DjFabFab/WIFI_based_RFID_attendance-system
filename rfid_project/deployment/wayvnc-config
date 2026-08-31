@@ -1,0 +1,20 @@
+# WayVNC config for Presency kiosk (Pi: rfid-monitor, labwc + chromium kiosk)
+# Install:
+#   mkdir -p ~/.config/wayvnc
+#   cp rfid_project/deployment/wayvnc-config ~/.config/wayvnc/config
+#   # or system-wide: sudo cp rfid_project/deployment/wayvnc-config /etc/wayvnc/config
+#   systemctl --user restart wayvnc  # or sudo systemctl restart wayvnc
+#
+# This throttles the software encoder on Pi 3 to 15 fps (default 30) so the
+# infinite kiosk-pulse animation and 1 Hz clock do not saturate a core.
+# Pair with compositor-friendly CSS (transform/opacity pulse, background-attachment:scroll)
+# for full mitigation. Damage tracking is inherent via wlr-screencopy; capping fps
+# limits encode frequency even when damage is continuous.
+#
+# See: https://github.com/any1/wayvnc (wayvnc.scd) — -f/--max-fps, config key max-fps
+address=0.0.0.0
+port=5900
+
+# Throttle capture/encode to 15 fps (Pi 3 software encoding). Default is 30.
+# 15 fps keeps clock/animations smooth enough for kiosk while halving CPU.
+max-fps=15

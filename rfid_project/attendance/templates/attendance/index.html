@@ -15,34 +15,7 @@
     <p class="empty-hint">Bitte Token vorhalten</p>
   </div>
 
-    <div id="cards-wrap" hidden>
-      <div class="kiosk-table-wrap">
-        <div class="kiosk-table-header">
-          <h3 class="kiosk-table-title">Registrierte Benutzer</h3>
-        </div>
-        <div class="kiosk-table-scroll">
-          <table class="table" id="registered-table" aria-label="Registrierte Benutzer">
-            <thead>
-                <tr>
-                    <th title="Nutzername">Name</th>
-                    <th title="RFID Karten-ID (dezimal)">Card ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in registered_users %}
-                <tr>
-                    <td>{{ u.name }}</td>
-                    <td>{{ u.card_id }}</td>
-                </tr>
-                {% endfor %}
-                {% if not registered_users %}
-                <tr><td colspan="2" class="kiosk-empty-row">Keine registrierten Benutzer</td></tr>
-                {% endif %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="kiosk-table-wrap">
+    <div class="kiosk-table-wrap" id="cards-wrap" hidden>
         <div class="kiosk-table-header">
           <h3 class="kiosk-table-title">Anwesend</h3>
         </div>
@@ -58,7 +31,6 @@
                 <tbody id="cards" class="cards"></tbody>
             </table>
         </div>
-      </div>
     </div>
 </div>
 {{ initial_present_json|json_script:"initial-present" }}
@@ -81,23 +53,13 @@
     function renderPresent(data) {
       var rows = data || [];
       var $cards = $('#cards').empty();
-      
-      // Update empty state only if no registered users AND no present logs
-      var hasRegistered = {% if registered_users|length > 0 %}true{% else %}false{% endif %};
-      if (!rows.length && !hasRegistered) {
+      if (!rows.length) {
         $('#empty-state').prop('hidden', false);
         $('#cards-wrap').prop('hidden', true);
         return;
       }
       $('#empty-state').prop('hidden', true);
       $('#cards-wrap').prop('hidden', false);
-      
-      if (!rows.length) {
-        var $tr = $('<tr>');
-        $('<td colspan="3" class="kiosk-empty-row">').text('Keine anwesenden Nutzer').appendTo($tr);
-        $tr.appendTo($cards);
-        return;
-      }
       $.each(rows, function (i, entry) {
         var name = entry.name ? entry.name : (entry.card_id != null ? String(entry.card_id) : '');
         var $tr = $('<tr>');

@@ -306,7 +306,11 @@ def get_alarm_display(payload: dict, vehicle_status_payload=None) -> dict:
             return dict(idle)
         alarms = [a for a in items if isinstance(a, dict)]
         if not alarms:
-            return dict(idle)
+            # No alarm in payload: inject dummy closed alarm so downstream
+            # monitor/cluster parsing still runs (status/crew/roles) and the
+            # dashboard never looks completely empty - vehicle_status_display
+            # already comes from _early_map. Dummy has closed=True => active=False.
+            alarms = [{"id": 0, "closed": True, "title": "", "priority": False, "address": ""}]
         active = any(not a.get("closed") for a in alarms)
         active_alarms = [a for a in alarms if not a.get("closed")]
         candidates = active_alarms if active_alarms else alarms
