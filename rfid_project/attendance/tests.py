@@ -517,3 +517,46 @@ class GetAlarmDisplayTests(TestCase):
         result = get_alarm_display(payload)
         self.assertIn("vehicle_names", result)
         self.assertEqual(result["vehicle_names"], ["LF 10"])
+
+
+class WakeScreenTests(TestCase):
+    """Tests for divera_kiosk Wayland screen wake (labwc, output DSI-1)."""
+
+    def test_load_config_defaults_wl_output(self):
+        cfg = divera_kiosk.load_config({})
+        self.assertEqual(cfg["wl_output"], "DSI-1")
+
+    def test_load_config_wl_output_env_override(self):
+        cfg = divera_kiosk.load_config({"WL_OUTPUT": "HDMI-1"})
+        self.assertEqual(cfg["wl_output"], "HDMI-1")
+
+    def test_load_config_wl_output_blank_falls_back(self):
+        cfg = divera_kiosk.load_config({"WL_OUTPUT": "   "})
+        self.assertEqual(cfg["wl_output"], "DSI-1")
+
+    def test_wake_screen_issues_wlr_randr_with_output(self):
+        with patch.object(divera_kiosk.subprocess, "run") as mock_run:
+            divera_kiosk.wake_screen()
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        self.assertIn(["wlr-randr", "--output", "DSI-1", "--on"], cmds)
+        self.assertIn(["xdg-screensaver", "reset"], cmds)
+
+    def test_wake_screen_passes_wayland_env(self):
+        with patch.object(divera_kiosk.subprocess, "run") as mock_run:
+            divera_kiosk.wake_screen()
+        for call in mock_run.call_args_list:
+            env = call.kwargs.get("env", {})
+            self.assertIn("WAYLAND_DISPLAY", env)
+            self.assertIn("XDG_RUNTIME_DIR", env)
+
+    def test_wake_screen_issues_no_xset(self):
+        with patch.object(divera_kiosk.subprocess, "run") as mock_run:
+            divera_kiosk.wake_screen()
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        self.assertFalse(any(c[0] == "xset" for c in cmds))
+
+    def test_wake_screen_respects_custom_output(self):
+        with patch.object(divera_kiosk.subprocess, "run") as mock_run:
+            divera_kiosk.wake_screen("HDMI-1")
+        cmds = [c.args[0] for c in mock_run.call_args_list]
+        self.assertIn(["wlr-randr", "--output", "HDMI-1", "--on"], cmds)

@@ -37,6 +37,7 @@ DEFAULTS = {
     "divera_page_url": "http://127.0.0.1:8000/alarm/",
     "kiosk_home_url": "http://127.0.0.1:8000/",
     "cdp_base": "http://127.0.0.1:9222",
+    "wl_output": "DSI-1",
     "poll_seconds": 15,
     "alarm_visible_seconds": 1200,
 }
@@ -63,6 +64,7 @@ def load_config(environ=None):
         "divera_page_url": env.get("DIVERA_PAGE_URL", DEFAULTS["divera_page_url"]),
         "kiosk_home_url": env.get("KIOSK_HOME_URL", DEFAULTS["kiosk_home_url"]),
         "cdp_base": env.get("CDP_BASE", DEFAULTS["cdp_base"]),
+        "wl_output": (env.get("WL_OUTPUT") or DEFAULTS["wl_output"]).strip() or DEFAULTS["wl_output"],
         "poll_seconds": _env_int(env, "POLL_SECONDS", DEFAULTS["poll_seconds"]),
         "alarm_visible_seconds": _env_int(
             env, "ALARM_VISIBLE_SECONDS", DEFAULTS["alarm_visible_seconds"]
@@ -202,28 +204,25 @@ def cdp_activate_tab(cfg, target_id):
         return False
 
 
-def wake_screen():
-    """Try OS-level screen wake commands; never raise.
+def wake_screen(wl_output="DSI-1"):
+    """Wake the kiosk screen on labwc/Wayland; never raise.
 
-    Attempts X11/Wayland wake helpers via subprocess; each invocation is
-    wrapped in try/except and logs on failure without propagating.
+    Runs Wayland wake helpers via subprocess with the compositor socket
+    environment injected; each invocation is wrapped in try/except and logs
+    on failure without propagating.
     """
-    # X11: reset screensaver and force DPMS on
+    wake_env = dict(
+        os.environ,
+        WAYLAND_DISPLAY=os.environ.get("WAYLAND_DISPLAY", "wayland-0"),
+        XDG_RUNTIME_DIR=os.environ.get("XDG_RUNTIME_DIR", "/run/user/1000"),
+    )
+    # Wayland — try each, ignore failures
     for cmd in (
-        ["xset", "s", "reset"],
-        ["xset", "dpms", "force", "on"],
-    ):
-        try:
-            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
-        except Exception as exc:  # noqa: BLE001
-            log.debug("wake_screen %s failed: %s", " ".join(cmd), exc)
-    # Wayland / generic fallbacks — try each, ignore failures
-    for cmd in (
-        ["wlr-randr", "--output", "--on"],
+        ["wlr-randr", "--output", wl_output, "--on"],
         ["xdg-screensaver", "reset"],
     ):
         try:
-            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, env=wake_env)
         except Exception as exc:  # noqa: BLE001
             log.debug("wake_screen %s failed: %s", " ".join(cmd), exc)
 
@@ -249,15 +248,16 @@ def run(cfg):
                     log.info("Divera tab already open; activating...")
                 else:
                     divera_target_id = cdp_open_tab(cfg, cfg["divera_page_url"])
-                if divera_target_id is not None:
-                    wake_screen()
-                    deadline = now + cfg["alarm_visible_seconds"]
-                    last_id = newest_id
-                    state = "divera"
-                    log.info(
-                        "Switched to Divera; visible for %.0f seconds",
-                        cfg["alarm_visible_seconds"],
-                    )
+                if divera_target_id is None:
+                    log.warning("Divera tab could not be opened; waking screen anyway")
+                wake_screen(cfg["wl_output"])
+                deadline = now + cfg["alarm_visible_seconds"]
+                last_id = newest_id
+                state = "divera"
+                log.info(
+                    "Switched to Divera; visible for %.0f seconds",
+                    cfg["alarm_visible_seconds"],
+                )
         else:  # state == "divera"
             if (
                 newest_id is not None
@@ -266,7 +266,7 @@ def run(cfg):
             ):
                 last_id = newest_id
                 deadline = now + cfg["alarm_visible_seconds"]
-                wake_screen()
+                wake_screen(cfg["wl_output"])
                 log.info("New alarm detected; extended Divera window")
             if now >= deadline:
                 cdp_close_tab(cfg, divera_target_id)
