@@ -6,6 +6,9 @@
 
 -> No Wi-Fi or HTTP is used on the device — all attendance data flows over the local USB connection to the Django server, which stores it in SQLite.
 
+Vision & decisions: see [docs/VISION_AND_DECISIONS.md](docs/VISION_AND_DECISIONS.md) for architectural goals and decisions.
+Vision & Entscheidungen: siehe [docs/VISION_AND_DECISIONS.md](docs/VISION_AND_DECISIONS.md) für Architekturziele und Entscheidungen.
+
 # Presency
 
 Presency ist ein leichtgewichtiges Anwesenheitssystem, das RFID-Karten mit einem ESP8266/ESP32 (PN532 per I2C, geflasht via ESPHome) liest und die UID über die lokale USB-Seriell-Verbindung an einen Django-Server weiterleitet.
